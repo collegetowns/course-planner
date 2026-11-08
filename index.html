@@ -108,6 +108,9 @@
   .muted{color:var(--muted)}
   .foot{margin-top:28px;font-size:13px;color:var(--muted);display:flex;gap:12px;align-items:center;flex-wrap:wrap}
   .foot .btn{font-size:13px}
+  .foot{background:#fff;border:1px solid var(--line);border-radius:8px;padding:12px 14px;gap:8px}
+  .foot > span{flex-basis:100%}
+  .foot:empty{display:none}
   /* drop */
   .dropzone{border:2px dashed #cfd6d6;border-radius:8px;padding:18px;text-align:center;color:var(--muted);margin-top:8px;cursor:pointer;background:#fbfcfc}
   .dropzone.over{border-color:var(--accent);background:var(--accent-soft);color:var(--accent)}
@@ -128,6 +131,12 @@
   .modal .actions{display:flex;justify-content:flex-end;gap:8px;margin-top:18px}
   .err{color:var(--warn);font-size:14px;margin-top:8px}
   .banner{background:#fff4e5;border:1px solid #f1d9b5;border-radius:8px;padding:10px 14px;margin-bottom:16px;font-size:14px}
+  .dl-wrap{position:relative;display:inline-block}
+  .dl-menu{position:absolute;right:0;top:calc(100% + 4px);background:#fff;border:1px solid var(--line);border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.1);padding:4px;z-index:5;width:290px}
+  .dl-menu[hidden]{display:none}
+  .dl-menu button{display:block;width:100%;text-align:left;border:none;background:none;padding:8px 10px;border-radius:6px;cursor:pointer}
+  .dl-menu button:hover{background:var(--accent-soft)}
+  .dl-menu small{display:block;color:var(--muted);font-size:12.5px}
   .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#1f2328;color:#fff;padding:9px 16px;border-radius:8px;font-size:14px;z-index:30}
   /* drag to move */
   .sched td[draggable=true]{position:relative;padding-left:18px}
@@ -196,6 +205,12 @@
 <script>
 (() => {
 "use strict";
+// The page's own source, captured before anything is drawn, so "Download the app" can save a copy.
+const APP_SOURCE = (() => {
+  const c = document.documentElement.cloneNode(true);
+  const old = c.querySelector("#cp-embedded"); if (old) old.remove();
+  return "<!DOCTYPE html>\n" + c.outerHTML;
+})();
 // ================= state =================
 const LS_KEY = "coursePlanner.data.v1";
 let mode = "loading";          // db | local | memory
@@ -268,6 +283,16 @@ function startLocal(note){
   mode = "local";
   const raw = lsGet(LS_KEY);
   if (raw) { try { (JSON.parse(raw).terms || []).forEach(t => terms.set(t.id, t)); } catch(e){} }
+  // A downloaded copy carries the courses saved into it; add any this browser doesn't have (or has older).
+  let fromFile = 0;
+  try {
+    const emb = document.getElementById("cp-embedded");
+    if (emb) for (const t of (JSON.parse(emb.textContent).terms || [])) {
+      const have = terms.get(t.id);
+      if (t && t.id && Array.isArray(t.weeks) && (!have || (t.updatedAt || 0) > (have.updatedAt || 0))) { terms.set(t.id, t); fromFile++; }
+    }
+  } catch(e){}
+  if (fromFile) saveLocal();
   if (raw === null && !lsSet("cp.test", "1")) { mode = "memory"; showBanner("This browser isn't allowing saving, so changes will be lost when you close the page. Use “Download backup” to keep your work."); }
   else if (note) showBanner(note);
   pickCurrent(); render();
@@ -327,7 +352,8 @@ function render(){
         </button>
       </div>
       <p class="fine">Works best when your Word schedule is a table with columns for the week or date, topic, readings and assignments.<br>
-      Everything stays in this browser; nothing is uploaded anywhere. Have a backup file? <a href="#" data-act="restore">Restore it</a>.</p>
+      Everything stays on your computer; nothing is uploaded anywhere. Have a backup file? <a href="#" data-act="restore">Restore it</a>.<br>
+      Prefer to keep it on your computer? <a href="#" data-act="getapp">Download the app</a> and open it any time, even offline.</p>
       <input type="file" id="welcomeFile" accept=".docx" hidden>
     </div>`;
     return;
@@ -340,7 +366,11 @@ function render(){
       <select id="termSel" aria-label="Term">${ts.map(x => `<option value="${esc(x.id)}" ${x.id===t.id?"selected":""}>${esc(x.term || "Untitled term")}</option>`).join("")}</select>
       <span class="sp"></span>
       <button class="btn small" data-act="copytable">Copy table</button>
-      <button class="btn small" data-act="worddoc">Download Word</button>
+      <span class="dl-wrap"><button class="btn small" data-act="dlmenu">Download ▾</button>
+        <span class="dl-menu" hidden>
+          <button data-act="worddoc"><b>Schedule</b><small>The week-by-week table, as a Word file</small></button>
+          <button data-act="notesdoc"><b>Notes &amp; links</b><small>Each week's activity, links, how it went and changes, as a Word file</small></button>
+        </span></span>
       ${canWrite ? `<button class="btn small primary" data-act="copynext">Copy to next term</button>` : ""}
       ${canWrite ? `<button class="btn small" data-act="dates">Dates &amp; holidays</button>` : ""}
       ${canWrite ? `<button class="btn small" data-act="editterm">Rename</button><button class="btn small danger" data-act="delterm">Delete term</button>` : ""}
@@ -520,11 +550,16 @@ function renderChanges(t){
     </div>`).join("")}</div>`;
 }
 
+function appFile(){
+  const data = JSON.stringify({ savedAt: new Date().toISOString(), terms: allTerms() }).replace(/</g, "\\u003c");
+  return APP_SOURCE.replace("</head>", `<script type="application/json" id="cp-embedded">${data}<\/script>\n</head>`);
+}
 function renderFoot(){
   const f = $("#foot");
   if (mode === "loading" || !terms.size) { f.innerHTML = ""; return; }
-  const where = mode === "local" ? "Your work is saved in this browser on this computer. Download a backup now and then to keep a copy or move it to another computer." : "This browser isn't saving your work.";
+  const where = mode === "local" ? "Your work is saved in this browser. Clearing your browsing history or cookies can erase it, so keep a copy on your computer:" : "This browser isn't saving your work. Keep a copy on your computer:";
   f.innerHTML = `<span>${where}</span>
+    <button class="btn small primary" data-act="getapp" title="Saves Free Course Planner as a file you can open any time, even offline, with your courses inside">Download the app</button>
     <button class="btn small" data-act="backup">Download backup</button>
     ${canWrite ? `<button class="btn small" data-act="restore">Restore from backup</button>` : ""}`;
 }
@@ -580,6 +615,7 @@ function redrawOpen(t){
   tbody.querySelectorAll("textarea").forEach(autoGrow);
 }
 
+document.addEventListener("click", e => { if (!e.target.closest(".dl-wrap")) document.querySelectorAll(".dl-menu").forEach(x => x.hidden = true); }, true);
 document.addEventListener("click", async e => {
   const cell = e.target.closest && e.target.closest("td[data-edit]");
   if (cell && canWrite && !e.target.closest("[data-act]") && !e.target.closest(".grip") && !cell.classList.contains("editing")) { startEdit(cell); return; }
@@ -627,7 +663,19 @@ document.addEventListener("click", async e => {
         await removeTerm(t.id); currentId = null; pickCurrent(); render();
       }); break;
     case "copytable": copyTable(t); break;
+    case "dlmenu": {
+      const menu = b.parentElement.querySelector(".dl-menu"); const show = menu.hidden;
+      document.querySelectorAll(".dl-menu").forEach(x => x.hidden = true); menu.hidden = !show; break;
+    }
+    case "notesdoc": {
+      b.closest(".dl-menu").hidden = true;
+      const blob = buildNotesDocx(t);
+      if (!blob) { toast("No activities, links or notes in this term yet."); break; }
+      const ok = await saveFile(`${fileSafe(t.course)} - ${fileSafe(t.term)} - notes and links.docx`, blob, "application/vnd.openxmlformats-officedocument.wordprocessingml.document");
+      if (ok) toast("Notes & links downloaded"); break;
+    }
     case "worddoc": {
+      b.closest(".dl-menu") && (b.closest(".dl-menu").hidden = true);
       const ok = await saveFile(`${fileSafe(t.course)} - ${fileSafe(t.term)}.docx`, buildDocx(t), "application/vnd.openxmlformats-officedocument.wordprocessingml.document");
       if (ok) toast("Word file downloaded"); break;
     }
@@ -635,6 +683,11 @@ document.addEventListener("click", async e => {
       const data = JSON.stringify({ app: "Free Course Planner", version: 1, exportedAt: new Date().toISOString(), terms: allTerms() }, null, 1);
       const ok = await saveFile(`Free Course Planner backup ${new Date().toISOString().slice(0,10)}.json`, data, "application/json");
       if (ok) toast("Backup downloaded"); break;
+    }
+    case "getapp": {
+      e.preventDefault();
+      const ok = await saveFile(terms.size ? `Free Course Planner (saved ${new Date().toISOString().slice(0,10)}).html` : "Free Course Planner.html", appFile(), "text/html");
+      if (ok) toast(terms.size ? "Downloaded, with your courses inside" : "Downloaded"); break;
     }
     case "restore": e.preventDefault(); $("#restoreInput").click(); break;
   }
@@ -976,6 +1029,53 @@ function openCopyNext(t){
 }
 // For a term with no saved calendar, guess the meeting day from its first date if possible
 function guessCalendar(t){ return { start: "", end: "", days: [], holidays: [] }; }
+
+// ================= export: notes & links (.docx) =================
+function buildNotesDocx(t){
+  const x = s => String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+  const rpr = (o = {}) => `<w:rPr><w:rFonts w:ascii="Calibri" w:hAnsi="Calibri"/>${o.b?"<w:b/>":""}${o.i?"<w:i/>":""}${o.color?`<w:color w:val="${o.color}"/>`:""}${o.u?'<w:u w:val="single"/>':""}<w:sz w:val="${o.sz||21}"/></w:rPr>`;
+  const run = (s, o) => `<w:r>${rpr(o)}<w:t xml:space="preserve">${x(s)}</w:t></w:r>`;
+  const para = (runs, after = 40, before = 0, keep) => `<w:p><w:pPr>${keep?"<w:keepNext/>":""}<w:spacing w:before="${before}" w:after="${after}"/></w:pPr>${runs}</w:p>`;
+  const rels = [];
+  const link = (text, url) => { const id = "rId" + (rels.length + 10); rels.push(`<Relationship Id="${id}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink" Target="${x(url)}" TargetMode="External"/>`); return `<w:hyperlink r:id="${id}">${run(text, { color: "2F5D62", u: 1 })}</w:hyperlink>`; };
+  const label = s => para(run(s, { b: 1, sz: 19, color: "6B7075" }), 20, 100, true);
+  const textLines = s => lines(s).map(l => para(run(l))).join("");
+  const body = [];
+  body.push(para(run(t.course, { b: 1, sz: 30 }), 40));
+  body.push(para(run(`${t.term} — Activities, links and notes`, { i: 1, sz: 23 }), 240));
+  let count = 0;
+  for (const w of t.weeks) {
+    if (w.holiday) continue;
+    const links = (w.links || []).filter(l => l.url || l.title);
+    if (!w.activity && !links.length && !w.reflection && !w.changes) continue;
+    count++;
+    const head = [w.label, w.date].filter(Boolean).join(" · ");
+    body.push(para(run(head, { b: 1, sz: 24 }) + (firstLine(w.topic) ? run("  —  " + firstLine(w.topic), { sz: 24 }) : ""), 60, 280, true));
+    if (w.activity) { body.push(label("ACTIVITY")); body.push(textLines(w.activity)); }
+    if (links.length) {
+      body.push(label("LINKS"));
+      for (const l of links) {
+        const u = safeUrl(l.url);
+        let r = u ? link(l.title || l.url, u) : run(l.title);
+        if (u && l.title) r += run("  " + u, { sz: 18, color: "6B7075" });
+        if (l.note) r += run("  — " + l.note, { i: 1 });
+        body.push(para(r));
+      }
+    }
+    if (w.reflection) { body.push(label("HOW IT WENT")); body.push(textLines(w.reflection)); }
+    if (w.changes) { body.push(label("CHANGES FOR NEXT TIME")); body.push(textLines(w.changes)); }
+  }
+  if (!count) return null;
+  const docXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><w:body>${body.join("")}
+<w:sectPr><w:pgSz w:w="12240" w:h="15840"/><w:pgMar w:top="1080" w:right="1080" w:bottom="1080" w:left="1080" w:header="720" w:footer="720" w:gutter="0"/></w:sectPr></w:body></w:document>`;
+  return zipStore([
+    { name: "[Content_Types].xml", text: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/></Types>` },
+    { name: "_rels/.rels", text: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>` },
+    { name: "word/_rels/document.xml.rels", text: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">${rels.join("")}</Relationships>` },
+    { name: "word/document.xml", text: docXml },
+  ]);
+}
 
 // ================= export: table =================
 function tableHtmlFor(t){
