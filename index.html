@@ -20,6 +20,10 @@
   .powered{font-size:11px;line-height:1;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);text-decoration:none;border:1px solid var(--line);border-radius:20px;padding:5px 10px;background:#fff;white-space:nowrap}
   .powered b{color:var(--accent);font-weight:700}
   .powered:hover{border-color:var(--accent)}
+  .where{font-size:12px;color:var(--muted);display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+  .where::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--dot,#9aa0a6)}
+  .where.local{--dot:#2e8b57}
+  .where.web{--dot:#3b7dd8}
   .sitefoot{text-align:center;font-size:13px;color:var(--muted);margin-top:40px;padding-top:16px;border-top:1px solid var(--line)}
   .sitefoot a{color:var(--accent)}
   select,input[type=text],input[type=url],textarea{border:1px solid var(--line);background:#fff;border-radius:6px;padding:7px 10px;width:100%}
@@ -198,6 +202,7 @@
     <div class="brand">
       <h1>Free Course Planner</h1>
       <a class="powered" href="https://www.collegetowns.org/" target="_blank" rel="noopener">Powered by <b>College Towns</b></a>
+      <span class="where" id="whereBadge"></span>
     </div>
     <span class="status" id="status"></span>
     <button class="btn primary" id="newTermBtn">+ New term</button>
@@ -215,6 +220,7 @@
 <script>
 (() => {
 "use strict";
+const IS_LOCAL = location.protocol === "file:"; // opened from a file on the person's computer
 // The page's own source, captured before anything is drawn, so "Download the app" can save a copy.
 const APP_SOURCE = (() => {
   const c = document.documentElement.cloneNode(true);
@@ -361,12 +367,12 @@ function render(){
           <span>Choose your class dates and holidays, then fill in topics, readings and assignments.</span>
         </button>
       </div>
-      <button class="getapp-big" data-act="getapp">
+      ${IS_LOCAL ? "" : `<button class="getapp-big" data-act="getapp">
         <span class="sc-icon">⤓</span>
         <span><b>Download the app</b><span>Keep Free Course Planner on your computer. Open it any time, even offline, and your work stays in a file you control.</span></span>
-      </button>
+      </button>`}
       <p class="fine">Works best when your Word schedule is a table with columns for the week or date, topic, readings and assignments.<br>
-      Everything stays on your computer; nothing is uploaded anywhere. Have a backup file? <a href="#" data-act="restore">Restore it</a>.</p>
+      ${IS_LOCAL ? "You're using the copy saved on your computer." : ""} Everything stays on your computer; nothing is uploaded anywhere. Have a backup file? <a href="#" data-act="restore">Restore it</a>.</p>
       <input type="file" id="welcomeFile" accept=".docx" hidden>
     </div>`;
     return;
@@ -570,9 +576,13 @@ function appFile(){
 function renderFoot(){
   const f = $("#foot");
   if (mode === "loading" || !terms.size) { f.innerHTML = ""; return; }
-  const where = mode === "local" ? "Your work is saved in this browser. Clearing your browsing history or cookies can erase it, so keep a copy on your computer:" : "This browser isn't saving your work. Keep a copy on your computer:";
+  const where = IS_LOCAL
+    ? "You're using the copy on your computer. Your changes save in this browser as you work; “Save an updated copy” also puts them into a new file, so they're safe even if your browser data is cleared."
+    : mode === "local" ? "Your work is saved in this browser. Clearing your browsing history or cookies can erase it, so keep a copy on your computer:" : "This browser isn't saving your work. Keep a copy on your computer:";
   f.innerHTML = `<span>${where}</span>
-    <button class="btn small primary" data-act="getapp" title="Saves Free Course Planner as a file you can open any time, even offline, with your courses inside">Download the app</button>
+    ${IS_LOCAL
+      ? `<button class="btn small primary" data-act="getapp" title="Saves a new copy of this file with all your latest work inside">Save an updated copy</button>`
+      : `<button class="btn small primary" data-act="getapp" title="Saves Free Course Planner as a file you can open any time, even offline, with your courses inside">Download the app</button>`}
     <button class="btn small" data-act="backup">Download backup</button>
     ${canWrite ? `<button class="btn small" data-act="restore">Restore from backup</button>` : ""}`;
 }
@@ -721,7 +731,7 @@ document.addEventListener("click", async e => {
     case "getapp": {
       e.preventDefault();
       const ok = await saveFile(terms.size ? `Free Course Planner (saved ${new Date().toISOString().slice(0,10)}).html` : "Free Course Planner.html", appFile(), "text/html");
-      if (ok) toast(terms.size ? "Downloaded, with your courses inside" : "Downloaded"); break;
+      if (ok) toast(IS_LOCAL ? "Saved an updated copy. You can delete the older file." : terms.size ? "Downloaded, with your courses inside" : "Downloaded"); break;
     }
     case "restore": e.preventDefault(); $("#restoreInput").click(); break;
   }
@@ -1533,6 +1543,9 @@ function tableToWeeks(grid){
 
 
 // ================= start =================
+{ const wb = $("#whereBadge");
+  if (IS_LOCAL) { wb.className = "where local"; wb.textContent = "On your computer"; wb.title = "You're using the copy of Free Course Planner saved on this computer."; }
+  else { wb.className = "where web"; wb.textContent = "Web version"; wb.title = "You're using Free Course Planner on the web. Download the app to keep a copy on your computer."; } }
 render();
 startLocal();
 window.addEventListener("beforeunload", () => { for (const id of [...dirty]) flush(id); });
