@@ -1,0 +1,1408 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="A free course planner for teachers: import your Word syllabus, plan week by week, keep notes on how each class went, and carry it forward year to year.">
+<title>Free Course Planner · College Towns</title>
+<style>
+  :root{
+    --bg:#f7f7f5; --card:#ffffff; --ink:#1f2328; --muted:#6b7075; --line:#e2e2dd;
+    --accent:#2f5d62; --accent-soft:#e8f0f0; --warn:#a33a2b; --note:#fbf8ef; --head:#f2f2ee;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+  button,input,textarea,select{font:inherit;color:inherit}
+  .wrap{max-width:1120px;margin:0 auto;padding:22px 20px 80px}
+  header.top{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:16px}
+  header.top h1{font-size:20px;font-weight:600;margin:0;letter-spacing:-.01em}
+  .brand{margin-right:auto;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+  .powered{font-size:11px;line-height:1;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);text-decoration:none;border:1px solid var(--line);border-radius:20px;padding:5px 10px;background:#fff;white-space:nowrap}
+  .powered b{color:var(--accent);font-weight:700}
+  .powered:hover{border-color:var(--accent)}
+  .sitefoot{text-align:center;font-size:13px;color:var(--muted);margin-top:40px;padding-top:16px;border-top:1px solid var(--line)}
+  .sitefoot a{color:var(--accent)}
+  select,input[type=text],input[type=url],textarea{border:1px solid var(--line);background:#fff;border-radius:6px;padding:7px 10px;width:100%}
+  textarea{resize:vertical;min-height:62px}
+  select:focus,input:focus,textarea:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+  .btn{border:1px solid var(--line);background:#fff;border-radius:6px;padding:7px 12px;cursor:pointer;white-space:nowrap;text-decoration:none;display:inline-block}
+  .btn:hover{border-color:#cfcfca;background:#fafaf8}
+  .btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+  .btn.primary:hover{filter:brightness(1.08)}
+  .btn.small{padding:4px 10px;font-size:13px}
+  .btn.link{border:none;background:none;color:var(--accent);padding:4px 6px}
+  .btn.danger{color:var(--warn)}
+  .status{font-size:13px;color:var(--muted);min-width:60px;text-align:right}
+
+  /* course tabs */
+  .courses{display:flex;gap:6px;flex-wrap:wrap;border-bottom:1px solid var(--line);margin-bottom:18px}
+  .course-tab{border:1px solid transparent;border-bottom:none;background:none;padding:8px 14px;border-radius:8px 8px 0 0;cursor:pointer;color:var(--muted);margin-bottom:-1px}
+  .course-tab:hover{color:var(--ink)}
+  .course-tab.on{background:var(--card);border-color:var(--line);color:var(--ink);font-weight:600}
+  .course-tab.add{color:var(--accent)}
+
+  .termhead{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+  .termhead h2{margin:0;font-size:22px;font-weight:600;letter-spacing:-.01em}
+  .termhead select{width:auto;font-weight:600}
+  .termhead .sp{flex:1}
+  .tabs{display:flex;gap:4px;margin-bottom:12px}
+  .tab{border:none;background:none;padding:6px 12px;border-radius:6px;cursor:pointer;color:var(--muted)}
+  .tab.on{background:var(--accent-soft);color:var(--accent);font-weight:600}
+
+  /* schedule table */
+  table.sched{width:100%;border-collapse:separate;border-spacing:0;background:var(--card);border:1px solid var(--line);border-radius:8px;table-layout:fixed;overflow:hidden}
+  .sched th{background:var(--head);text-align:left;font-size:13px;font-weight:600;color:#3d4146;padding:10px 12px;border-bottom:1px solid var(--line)}
+  .sched td{padding:10px 12px;vertical-align:top;border-bottom:1px solid var(--line);font-size:14px}
+  .sched td[data-edit]{cursor:text}
+  .sched td[data-edit]:hover{background:#fafaf7;box-shadow:inset 0 0 0 1px #e3e3de}
+  .sched td.editing,.sched td.editing:hover{background:#fff !important;box-shadow:inset 0 0 0 2px var(--accent)}
+  .sched .ce{width:100%;border:1px solid var(--line);border-radius:5px;padding:5px 7px;font-size:14px;min-height:0;resize:vertical;background:#fff}
+  .sched textarea.ce{min-height:70px}
+  .ce-hint{font-size:11.5px;color:var(--muted);margin-top:3px}
+  .ph{color:#b5b8bb;font-size:13px;opacity:0}
+  .sched td[data-edit]:hover .ph{opacity:1}
+  .detbtn{border:1px solid var(--line);background:#fff;border-radius:6px;padding:3px 6px;font-size:11px;color:var(--muted);cursor:pointer;display:flex;flex-direction:column;align-items:center;line-height:1.2;width:100%}
+  .detbtn span{font-size:10.5px;margin-top:1px}
+  .detbtn:hover,.detbtn.on{border-color:var(--accent);color:var(--accent)}
+  .badge{cursor:pointer}
+  .sched tr.row.open td{background:var(--accent-soft);border-bottom-color:transparent}
+  .sched tr:last-child td{border-bottom:none}
+  .sched .wk{font-weight:600}
+  .sched .dt{color:var(--muted);font-size:13px}
+  .sched .ses{font-size:13px;font-weight:600;color:var(--accent)}
+  .sched .lines div{margin-bottom:2px}
+  .sched .lines .b::before{content:"–  ";color:var(--muted)}
+  .sched .ttl div:first-child{font-weight:500}
+  .sched .ttl div+div{color:var(--muted);font-size:13px}
+  .badges{display:flex;gap:5px;flex-wrap:wrap;margin-top:6px}
+  .badge{font-size:11.5px;color:var(--accent);background:#fff;border:1px solid #cfe0e0;border-radius:10px;padding:0 7px;white-space:nowrap}
+  .chev{padding-left:4px !important;padding-right:8px !important}
+  .sched td.detail{background:#fff;padding:0 0 4px;border-bottom:1px solid var(--line)}
+  .detail-inner{padding:16px 18px 18px;border-left:3px solid var(--accent)}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .grid3{display:grid;grid-template-columns:120px 150px 1fr;gap:14px}
+  label.f{display:block;font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px}
+  .sec{margin-top:16px}
+  .sec h4{margin:0 0 8px;font-size:14px;font-weight:600;display:flex;align-items:center;gap:8px}
+  .sec h4 .hint{font-weight:400;color:var(--muted);font-size:13px}
+  details.plan{margin-top:16px;border-top:1px solid var(--line);padding-top:12px}
+  details.plan summary{cursor:pointer;font-size:14px;color:var(--muted)}
+  .linkrow{display:grid;grid-template-columns:1fr 1.3fr 1.4fr auto;gap:8px;margin-bottom:6px;align-items:start}
+  .linkrow .open{font-size:13px;padding-top:8px}
+  .after{background:var(--note);border:1px solid #efe7d2;border-radius:8px;padding:12px}
+  .history{margin-top:16px;border:1px dashed #d6d6d0;border-radius:8px;padding:10px 12px}
+  .history summary{cursor:pointer;font-size:14px;color:var(--accent)}
+  .hist-item{margin-top:10px;padding-top:10px;border-top:1px solid var(--line);font-size:14px}
+  .hist-item:first-of-type{border-top:none}
+  .hist-item b{display:block;margin-bottom:2px}
+  .hist-item .k{color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.04em;margin-top:6px}
+  .hist-item p{margin:2px 0;white-space:pre-wrap}
+  .hist-item a{color:var(--accent)}
+  .detail-foot{display:flex;justify-content:space-between;margin-top:14px}
+  .empty{text-align:center;padding:60px 20px;color:var(--muted)}
+  .empty h2{color:var(--ink);font-weight:600;font-size:20px}
+  .sumlist .row{background:#fff;border:1px solid var(--line);border-radius:8px;padding:12px 14px;margin-bottom:8px}
+  .sumlist .row b{display:block}
+  .sumlist .row p{margin:4px 0 0;white-space:pre-wrap}
+  .sumlist .row .k{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-top:8px}
+  .muted{color:var(--muted)}
+  .foot{margin-top:28px;font-size:13px;color:var(--muted);display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+  .foot .btn{font-size:13px}
+  /* drop */
+  .dropzone{border:2px dashed #cfd6d6;border-radius:8px;padding:18px;text-align:center;color:var(--muted);margin-top:8px;cursor:pointer;background:#fbfcfc}
+  .dropzone.over{border-color:var(--accent);background:var(--accent-soft);color:var(--accent)}
+  .dropzone b{color:var(--ink)}
+  #pageDrop{position:fixed;inset:0;background:rgba(47,93,98,.12);border:3px dashed var(--accent);display:none;align-items:center;justify-content:center;z-index:20;font-size:20px;color:var(--accent);font-weight:600;pointer-events:none}
+  #pageDrop.on{display:flex}
+  /* modal */
+  .scrim{position:fixed;inset:0;background:rgba(20,22,24,.35);display:flex;align-items:flex-start;justify-content:center;padding:50px 16px;z-index:10;overflow:auto}
+  .modal{background:#fff;border-radius:10px;max-width:540px;width:100%;padding:22px;box-shadow:0 10px 40px rgba(0,0,0,.15)}
+  .modal h3{margin:0 0 14px;font-size:18px;font-weight:600}
+  .modal .fld{margin-bottom:12px}
+  .choices{display:grid;gap:8px}
+  .choice{display:flex;gap:10px;align-items:flex-start;border:1px solid var(--line);border-radius:8px;padding:10px 12px;cursor:pointer}
+  .choice:has(input:checked){border-color:var(--accent);background:var(--accent-soft)}
+  .choice > input{margin-top:4px}
+  .choice > div{flex:1}
+  .choice small{display:block;color:var(--muted)}
+  .modal .actions{display:flex;justify-content:flex-end;gap:8px;margin-top:18px}
+  .err{color:var(--warn);font-size:14px;margin-top:8px}
+  .banner{background:#fff4e5;border:1px solid #f1d9b5;border-radius:8px;padding:10px 14px;margin-bottom:16px;font-size:14px}
+  .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#1f2328;color:#fff;padding:9px 16px;border-radius:8px;font-size:14px;z-index:30}
+  /* drag to move */
+  .sched td[draggable=true]{position:relative;padding-left:18px}
+  .sched td[draggable=true]:active{cursor:grabbing}
+  .grip{cursor:grab;position:absolute;left:5px;top:11px;color:#b9bcbf;font-size:12px;letter-spacing:-2px;opacity:0;transition:opacity .12s;user-select:none}
+  .sched tr.row:hover .grip{opacity:1}
+  .sched tr.row td.drag-src{opacity:.4}
+  .sched tr.row td.drop-target{background:#dcebeb !important;box-shadow:inset 0 2px 0 var(--accent)}
+  .sched tr.row.hl-class td.g-class, .sched tr.row.hl-asg td.g-asg{background:#f1f6f6}
+  .sched tr.holiday td{background:repeating-linear-gradient(135deg,#f6f5f1,#f6f5f1 8px,#f1f0eb 8px,#f1f0eb 16px);color:var(--muted);cursor:default}
+  .sched tr.holiday .hol{font-style:italic}
+  .hint-line{font-size:13px;color:var(--muted);margin:-4px 0 10px}
+  .moveline{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:13px;color:var(--muted)}
+  .moveline select{width:auto;padding:4px 8px;font-size:13px}
+  /* calendar */
+  .cal{border:1px solid var(--line);border-radius:8px;padding:12px;background:#fcfcfb}
+  .cal .row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .cal input[type=date]{border:1px solid var(--line);background:#fff;border-radius:6px;padding:6px 8px;width:100%}
+  .daychips{display:flex;gap:4px;flex-wrap:wrap}
+  .daychip{border:1px solid var(--line);background:#fff;border-radius:6px;padding:4px 9px;font-size:13px;cursor:pointer;user-select:none}
+  .daychip.on{background:var(--accent);border-color:var(--accent);color:#fff}
+  .holrow{display:grid;grid-template-columns:1.3fr 1fr 1fr auto;gap:6px;margin-bottom:6px;align-items:center}
+  .holrow input{padding:6px 8px}
+  .holhead{display:grid;grid-template-columns:1.3fr 1fr 1fr auto;gap:6px;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:3px}
+  .preview{font-size:13px;color:var(--accent);margin-top:8px}
+  .modal.wide{max-width:640px}
+  .toast button{background:none;border:none;color:#9fd3d6;font-weight:600;cursor:pointer;margin-left:10px}
+  .welcome{max-width:760px;margin:30px auto 0;text-align:center}
+  .welcome h2{font-size:24px;font-weight:600;letter-spacing:-.01em;margin:0 0 10px}
+  .welcome > p.muted{font-size:15.5px;max-width:620px;margin:0 auto 26px}
+  .startgrid{display:grid;grid-template-columns:1fr 1fr;gap:16px;text-align:left}
+  .startcard{display:flex;flex-direction:column;gap:6px;background:#fff;border:1px solid var(--line);border-radius:10px;padding:22px;cursor:pointer;text-align:left;transition:border-color .15s,box-shadow .15s}
+  .startcard:hover{border-color:var(--accent);box-shadow:0 2px 10px rgba(47,93,98,.08)}
+  .startcard b{font-size:17px;font-weight:600}
+  .startcard span{color:var(--muted);font-size:14px}
+  .startcard .sc-icon{width:36px;height:36px;border-radius:8px;background:var(--accent-soft);color:var(--accent);display:flex;align-items:center;justify-content:center;font-size:18px;margin-bottom:4px}
+  .fine{font-size:13px;color:var(--muted);margin-top:22px;line-height:1.6}
+  .fine a{color:var(--accent)}
+  @media (max-width:760px){
+    .startgrid{grid-template-columns:1fr}
+    .sched col.c-read,.sched col.c-asg{width:auto}
+    .grid2,.grid3,.linkrow{grid-template-columns:1fr}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="brand">
+      <h1>Free Course Planner</h1>
+      <a class="powered" href="https://www.collegetowns.org/" target="_blank" rel="noopener">Powered by <b>College Towns</b></a>
+    </div>
+    <span class="status" id="status"></span>
+    <button class="btn primary" id="newTermBtn">+ New term</button>
+  </header>
+  <div id="banner"></div>
+  <nav class="courses" id="courses"></nav>
+  <main id="main"><div class="empty">Loading…</div></main>
+  <div class="foot" id="foot"></div>
+  <footer class="sitefoot">Free Course Planner &middot; a <a href="https://www.collegetowns.org/" target="_blank" rel="noopener">College Towns</a> project</footer>
+</div>
+<div id="pageDrop">Drop your Word schedule to start a new term</div>
+<div id="modalRoot"></div>
+<input type="file" id="restoreInput" accept=".json,application/json" hidden>
+
+<script>
+(() => {
+"use strict";
+// ================= state =================
+const LS_KEY = "coursePlanner.data.v1";
+let mode = "loading";          // db | local | memory
+let canWrite = true;
+const terms = new Map();
+let currentCourse = null, currentId = null;
+let view = "schedule";
+let openWeek = null;
+const dirty = new Set(), saveTimers = new Map(), saving = new Map();
+
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const uid = () => Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4);
+const clone = o => JSON.parse(JSON.stringify(o));
+const safeUrl = u => { u = String(u||"").trim(); if (!u) return ""; if (!/^https?:\/\//i.test(u)) u = "https://" + u; return u; };
+const lines = s => String(s||"").split("\n").map(x => x.trim()).filter(Boolean);
+const firstLine = s => lines(s)[0] || "";
+function lsGet(k){ try { return localStorage.getItem(k); } catch(e){ return null; } }
+function lsSet(k,v){ try { localStorage.setItem(k,v); return true; } catch(e){ return false; } }
+function setStatus(t){ $("#status").textContent = t; }
+function toast(msg, actionLabel, onAction){
+  document.querySelectorAll(".toast").forEach(x => x.remove());
+  const d = document.createElement("div"); d.className = "toast"; d.textContent = msg;
+  if (actionLabel) { const b = document.createElement("button"); b.textContent = actionLabel; b.onclick = () => { d.remove(); onAction(); }; d.appendChild(b); }
+  document.body.appendChild(d); setTimeout(() => d.remove(), actionLabel ? 7000 : 2400);
+}
+function showBanner(msg){ $("#banner").innerHTML = msg ? `<div class="banner">${esc(msg)}</div>` : ""; }
+
+function blankWeek(n){
+  return { id: uid(), label: "Week " + n, date: "", topic: "", readings: "", assignments: "",
+           activity: "", links: [], reflection: "", changes: "" };
+}
+const allTerms = () => [...terms.values()].sort((a,b) => (b.createdAt||0) - (a.createdAt||0));
+const courseList = () => [...new Set(allTerms().map(t => t.course || "Untitled course"))].sort((a,b) => a.localeCompare(b));
+const termsOf = c => allTerms().filter(t => (t.course || "Untitled course") === c);
+
+// ================= storage =================
+function scheduleSave(id){
+  dirty.add(id); setStatus("Editing…");
+  clearTimeout(saveTimers.get(id));
+  saveTimers.set(id, setTimeout(() => flush(id), 800));
+}
+function flush(id){
+  clearTimeout(saveTimers.get(id));
+  const p = (saving.get(id) || Promise.resolve()).then(async () => {
+    const t = terms.get(id);
+    dirty.delete(id);
+    if (!t) return;
+    t.updatedAt = Date.now();
+    if (mode === "local") {
+      saveLocal() ? setStatus("Saved") : setStatus("Couldn't save in this browser");
+    }
+  });
+  saving.set(id, p); return p;
+}
+function saveLocal(){ return lsSet(LS_KEY, JSON.stringify({ version: 1, terms: [...terms.values()] })); }
+async function removeTerm(id){
+  terms.delete(id);
+  if (mode === "local") saveLocal();
+}
+function pickCurrent(){
+  if (currentId && terms.has(currentId)) { currentCourse = terms.get(currentId).course || "Untitled course"; return; }
+  const remembered = lsGet("cp.current");
+  const t = terms.get(remembered) || allTerms()[0];
+  currentId = t ? t.id : null;
+  currentCourse = t ? (t.course || "Untitled course") : null;
+}
+
+function startLocal(note){
+  mode = "local";
+  const raw = lsGet(LS_KEY);
+  if (raw) { try { (JSON.parse(raw).terms || []).forEach(t => terms.set(t.id, t)); } catch(e){} }
+  if (raw === null && !lsSet("cp.test", "1")) { mode = "memory"; showBanner("This browser isn't allowing saving, so changes will be lost when you close the page. Use “Download backup” to keep your work."); }
+  else if (note) showBanner(note);
+  pickCurrent(); render();
+}
+
+function safeRender(){
+  const a = document.activeElement;
+  if (a && a.closest && a.closest("#main") && /INPUT|TEXTAREA|SELECT/.test(a.tagName)) {
+    a.addEventListener("blur", () => setTimeout(render, 0), { once: true }); return;
+  }
+  render();
+}
+
+// ================= files out =================
+async function saveFile(filename, data, mime){
+  try {
+    const blob = data instanceof Blob ? data : new Blob([data], { type: mime });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob); a.download = filename;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+    return true;
+  } catch (e) { toast("Downloading isn't allowed in this view."); return false; }
+}
+const fileSafe = s => String(s).replace(/[\\/:*?"<>|]+/g, "").trim() || "schedule";
+
+// ================= rendering =================
+function renderCourses(){
+  const nav = $("#courses");
+  const list = courseList();
+  nav.style.display = list.length ? "" : "none";
+  nav.innerHTML = list.map(c => `<button class="course-tab ${c===currentCourse?"on":""}" data-act="course" data-c="${esc(c)}">${esc(c)}</button>`).join("") +
+    (canWrite ? `<button class="course-tab add" data-act="newcourse">+ Add course</button>` : "");
+}
+
+function render(){
+  renderCourses();
+  renderFoot();
+  $("#newTermBtn").style.display = canWrite && terms.size ? "" : "none";
+  const main = $("#main");
+  const t = terms.get(currentId);
+  if (mode === "loading") { main.innerHTML = `<div class="empty">Loading…</div>`; return; }
+  if (!t) {
+    main.innerHTML = `<div class="welcome">
+      <h2>Plan your courses week by week, and improve them year to year.</h2>
+      <p class="muted">Keep each week's topic, readings and assignments in one table. Add the activity you ran, the videos and links you used, and notes on how class went. Next year, copy the term forward and see last year's notes right where you need them.</p>
+      <div class="startgrid">
+        <button class="startcard" data-act="startupload">
+          <span class="sc-icon">⇪</span>
+          <b>Upload a syllabus</b>
+          <span>Drag your Word (.docx) schedule onto this page, or click to choose it. Your week-by-week table becomes your planner.</span>
+        </button>
+        <button class="startcard" data-act="startblank">
+          <span class="sc-icon">＋</span>
+          <b>Start from scratch</b>
+          <span>Choose your class dates and holidays, then fill in topics, readings and assignments.</span>
+        </button>
+      </div>
+      <p class="fine">Works best when your Word schedule is a table with columns for the week or date, topic, readings and assignments.<br>
+      Everything stays in this browser; nothing is uploaded anywhere. Have a backup file? <a href="#" data-act="restore">Restore it</a>.</p>
+      <input type="file" id="welcomeFile" accept=".docx" hidden>
+    </div>`;
+    return;
+    return;
+  }
+  const ts = termsOf(currentCourse);
+  main.innerHTML = `
+    <div class="termhead">
+      <h2>${esc(currentCourse)}</h2>
+      <select id="termSel" aria-label="Term">${ts.map(x => `<option value="${esc(x.id)}" ${x.id===t.id?"selected":""}>${esc(x.term || "Untitled term")}</option>`).join("")}</select>
+      <span class="sp"></span>
+      <button class="btn small" data-act="copytable">Copy table</button>
+      <button class="btn small" data-act="worddoc">Download Word</button>
+      ${canWrite ? `<button class="btn small primary" data-act="copynext">Copy to next term</button>` : ""}
+      ${canWrite ? `<button class="btn small" data-act="dates">Dates &amp; holidays</button>` : ""}
+      ${canWrite ? `<button class="btn small" data-act="editterm">Rename</button><button class="btn small danger" data-act="delterm">Delete term</button>` : ""}
+    </div>
+    <div class="tabs">
+      <button class="tab ${view==="schedule"?"on":""}" data-act="view" data-v="schedule">Schedule</button>
+      <button class="tab ${view==="changes"?"on":""}" data-act="view" data-v="changes">Changes to make</button>
+    </div>
+    <div id="body"></div>`;
+  const body = $("#body");
+  if (view === "changes") { body.innerHTML = renderChanges(t); return; }
+  body.innerHTML = `
+    ${canWrite ? `<p class="hint-line">Click any cell to edit it. Drag a topic or its readings to move that class (classes in between shift over); drag an assignment to swap it with another week's. <b>Details</b> holds the activity, links and notes.</p>` : ""}
+    <table class="sched">
+      <colgroup><col style="width:13%"><col style="width:26%"><col class="c-read" style="width:29%"><col class="c-asg" style="width:25%"><col style="width:7%"></colgroup>
+      <thead><tr><th>Class # / Date</th><th>Topic</th><th>Reading</th><th>Assignments Due</th><th></th></tr></thead>
+      <tbody>${t.weeks.map(w => rowHtml(t, w)).join("")}</tbody>
+    </table>
+    ${canWrite ? `<div style="margin-top:10px"><button class="btn small" data-act="addweek">+ Add week</button></div>` : ""}`;
+  body.querySelectorAll("textarea").forEach(autoGrow);
+}
+
+const lineDivs = s => lines(s).map(l => `<div class="${l.startsWith("(")?"":"b"}">${esc(l)}</div>`).join("");
+const ph = txt => canWrite ? `<span class="ph">${txt}</span>` : "";
+function cellsHtml(w){
+  const ed = f => canWrite ? `data-edit="${f}"` : "";
+  const ls = /^(.*?)\s+[–-]\s+(Session\s+.+)$/i.exec(w.label || "");
+  const wkCell = `<td class="g-wk" ${ed("week")}><div class="wk">${esc(ls ? ls[1] : w.label) || ph("Week")}</div>${ls ? `<div class="ses">${esc(ls[2])}</div>` : ""}<div class="dt">${esc(w.date) || ph("+ date")}</div></td>`;
+  if (w.holiday) return `${wkCell}<td class="hol" colspan="3" ${ed("topic")}>${esc(w.topic || "No class")}</td><td></td>`;
+  const nLinks = (w.links||[]).filter(l => l.url || l.title).length;
+  const badges = [nLinks ? `${nLinks} link${nLinks>1?"s":""}` : "", w.activity ? "Activity" : "", (w.reflection||w.changes) ? "Notes" : ""].filter(Boolean);
+  const dr = canWrite ? `draggable="true"` : "";
+  const grip = canWrite ? `<span class="grip" title="Drag to move">⋮⋮</span>` : "";
+  const open = openWeek === w.id;
+  return `${wkCell}
+    <td class="ttl g-class" data-drag="class" ${dr} ${ed("topic")}>${grip}<div class="cv">${lines(w.topic).map(l => `<div>${esc(l)}</div>`).join("") || ph("+ topic")}</div>
+      ${badges.length ? `<div class="badges">${badges.map(b => `<span class="badge" data-act="toggle">${b}</span>`).join("")}</div>` : ""}</td>
+    <td class="lines g-class" data-drag="class" ${dr} ${ed("readings")}><div class="cv">${lineDivs(w.readings) || ph("+ reading")}</div></td>
+    <td class="lines g-asg" data-drag="asg" ${dr} ${ed("assignments")}>${grip}<div class="cv">${lineDivs(w.assignments) || ph("+ assignment")}</div></td>
+    <td class="chev"><button class="detbtn ${open?"on":""}" data-act="toggle" title="Activity, links and notes">${open ? "▲" : "▼"}<span>Details</span></button></td>`;
+}
+function rowHtml(t, w){
+  if (w.holiday) return `<tr class="holiday" data-row="${esc(w.id)}">${cellsHtml(w)}</tr>`;
+  const open = openWeek === w.id;
+  return `<tr class="row ${open?"open":""}" data-row="${esc(w.id)}">${cellsHtml(w)}</tr>` +
+    (open ? `<tr data-week="${esc(w.id)}"><td class="detail" colspan="5"><div class="detail-inner">${detailHtml(t, w)}</div></td></tr>` : "");
+}
+// ---------- inline cell editing ----------
+let editing = null; // {td, wid, field}
+function startEdit(td){
+  const t = terms.get(currentId); const tr = td.closest("tr[data-row]");
+  const w = t && t.weeks.find(x => x.id === tr.dataset.row); if (!w) return;
+  const field = td.dataset.edit;
+  if (editing) finishEdit();
+  editing = { td, wid: w.id, field };
+  td.removeAttribute("draggable"); td.classList.add("editing");
+  if (field === "week") {
+    td.innerHTML = `<input type="text" class="ce" data-cf="label" value="${esc(w.label)}" placeholder="Week #">
+      <input type="text" class="ce" data-cf="date" value="${esc(w.date)}" placeholder="Date, e.g. Sept. 15" style="margin-top:4px">`;
+  } else {
+    const hint = { topic: "Topic (extra lines show smaller)", readings: "One reading per line", assignments: "One assignment per line" }[field];
+    td.innerHTML = `<textarea class="ce" data-cf="${field}" placeholder="${hint}">${esc(w[field])}</textarea><div class="ce-hint">${field === "topic" ? "" : "One per line · "}Click outside or press Esc when done</div>`;
+  }
+  const first = td.querySelector(".ce");
+  td.querySelectorAll("textarea").forEach(autoGrow);
+  first.focus(); const n = first.value.length; first.setSelectionRange(n, n);
+}
+function finishEdit(){
+  if (!editing) return;
+  const { wid } = editing; editing = null;
+  const t = terms.get(currentId); const w = t && t.weeks.find(x => x.id === wid);
+  if (w) refreshRow(w);
+}
+document.addEventListener("focusout", e => {
+  if (!editing || !e.target.classList || !e.target.classList.contains("ce")) return;
+  setTimeout(() => { if (editing && !editing.td.contains(document.activeElement)) finishEdit(); }, 0);
+});
+document.addEventListener("keydown", e => {
+  if (!editing || !e.target.classList || !e.target.classList.contains("ce")) return;
+  if (e.key === "Escape" || (e.key === "Enter" && e.target.tagName === "INPUT")) {
+    e.preventDefault();
+    if (e.key === "Enter" && e.target.dataset.cf === "label") { editing.td.querySelector('[data-cf="date"]').focus(); return; }
+    e.target.blur();
+  }
+  if (e.key === "Tab" && !e.shiftKey && e.target.tagName === "TEXTAREA") {
+    // Tab moves to the next cell in the row
+    const next = editing.td.nextElementSibling;
+    if (next && next.dataset.edit) {
+      e.preventDefault();
+      const rowId = editing.wid, f = next.dataset.edit;
+      finishEdit();
+      const td = document.querySelector(`tr[data-row="${CSS.escape(rowId)}"] td[data-edit="${f}"]`);
+      if (td) startEdit(td);
+    }
+  }
+});
+function refreshRow(w){
+  const tr = document.querySelector(`tr[data-row="${CSS.escape(w.id)}"]`);
+  if (editing && editing.wid === w.id) return;
+  if (tr) tr.innerHTML = cellsHtml(w);
+}
+
+function detailHtml(t, w){
+  const ro = canWrite ? "" : "readonly";
+  const links = w.links || [];
+  return `
+    <div class="sec" style="margin-top:0">
+      <h4>Activity <span class="hint">What you did in class and how to run it</span></h4>
+      <textarea data-f="activity" placeholder="e.g. Small-group case discussion, 25 min, then share-out…" ${ro}>${esc(w.activity)}</textarea>
+    </div>
+    <div class="sec">
+      <h4>Links used in class <span class="hint">Videos, articles, slides</span></h4>
+      ${links.map((l, j) => `
+        <div class="linkrow" data-link="${j}">
+          <input type="text" data-lf="title" value="${esc(l.title)}" placeholder="Title" ${ro}>
+          <input type="url" data-lf="url" value="${esc(l.url)}" placeholder="https://youtube.com/…" ${ro}>
+          <input type="text" data-lf="note" value="${esc(l.note)}" placeholder="Note (e.g. show 4:10–12:00)" ${ro}>
+          <div style="display:flex;gap:2px">
+            ${l.url ? `<a class="btn link open" href="${esc(safeUrl(l.url))}" target="_blank" rel="noopener">Open</a>` : ""}
+            ${ro ? "" : `<button class="btn link danger" data-act="dellink" title="Remove link">✕</button>`}
+          </div>
+        </div>`).join("") || `<div class="muted" style="font-size:14px;margin-bottom:6px">No links yet.</div>`}
+      ${ro ? "" : `<button class="btn small" data-act="addlink">+ Add link</button>`}
+    </div>
+    <div class="sec after">
+      <h4>After class</h4>
+      <div class="grid2">
+        <div><label class="f">How it went</label><textarea data-f="reflection" placeholder="What worked, what didn't, student reactions…" ${ro}>${esc(w.reflection)}</textarea></div>
+        <div><label class="f">Changes for next time</label><textarea data-f="changes" placeholder="What to adjust next year…" ${ro}>${esc(w.changes)}</textarea></div>
+      </div>
+    </div>
+    ${historyBlock(t, w)}
+    ${ro ? "" : (() => {
+      const slots = t.weeks.filter(x => !x.holiday);
+      const opts = slots.map(x => `<option value="${esc(x.id)}" ${x.id===w.id?"selected":""}>${esc(x.label)}${x.date ? " · " + esc(x.date) : ""}</option>`).join("");
+      return `<div class="moveline sec">Move this class to <select data-move="class">${opts}</select>
+        &nbsp; Move its assignments to <select data-move="asg">${opts}</select></div>`;
+    })()}
+    <div class="detail-foot">
+      <button class="btn small" data-act="close">Close</button>
+      ${ro ? "" : `<button class="btn small danger" data-act="delweek">Delete this week</button>`}
+    </div>`;
+}
+
+const weekNum = w => { const m = String(w.label||"").match(/\d+/); return m ? +m[0] : null; };
+function historyBlock(t, w){
+  const n = weekNum(w);
+  const items = [];
+  for (const o of termsOf(t.course || "Untitled course")) {
+    if (o.id === t.id) continue;
+    const key = firstLine(w.topic).toLowerCase();
+    const ow = (key && (o.weeks||[]).find(x => !x.holiday && firstLine(x.topic).toLowerCase() === key)) ||
+               (o.weeks||[]).find(x => !x.holiday && ((n != null && weekNum(x) === n) || (n == null && x.label === w.label)));
+    if (!ow) continue;
+    const links = (ow.links||[]).filter(l => l.url || l.title);
+    if (!ow.reflection && !ow.changes && !ow.activity && !links.length) continue;
+    items.push(`<div class="hist-item">
+      <b>${esc(o.term)} — ${esc(firstLine(ow.topic))}</b>
+      ${ow.reflection ? `<div class="k">How it went</div><p>${esc(ow.reflection)}</p>` : ""}
+      ${ow.changes ? `<div class="k">Changes planned</div><p>${esc(ow.changes)}</p>` : ""}
+      ${ow.activity ? `<div class="k">Activity</div><p>${esc(ow.activity)}</p>` : ""}
+      ${links.length ? `<div class="k">Links</div>${links.map(l => `<p>${l.url ? `<a href="${esc(safeUrl(l.url))}" target="_blank" rel="noopener">${esc(l.title || l.url)}</a>` : esc(l.title)}${l.note ? ` <span class="muted">— ${esc(l.note)}</span>` : ""}</p>`).join("")}` : ""}
+    </div>`);
+  }
+  if (!items.length) return "";
+  return `<details class="history" ${lsGet("cp.histOpen")==="0"?"":"open"}><summary>Notes from past years (${items.length})</summary>${items.join("")}</details>`;
+}
+
+function renderChanges(t){
+  const rows = t.weeks.filter(w => w.changes || w.reflection);
+  if (!rows.length) return `<div class="empty"><p>No notes yet for ${esc(t.term)}. As you fill in “How it went” and “Changes for next time,” they’ll collect here so you can plan next year in one place.</p></div>`;
+  return `<div class="sumlist">${rows.map(w => `
+    <div class="row">
+      <b>${esc(w.label)}${w.date ? " · " + esc(w.date) : ""} — ${esc(firstLine(w.topic))}</b>
+      ${w.changes ? `<div class="k">Changes for next time</div><p>${esc(w.changes)}</p>` : ""}
+      ${w.reflection ? `<div class="k">How it went</div><p class="muted">${esc(w.reflection)}</p>` : ""}
+    </div>`).join("")}</div>`;
+}
+
+function renderFoot(){
+  const f = $("#foot");
+  if (mode === "loading" || !terms.size) { f.innerHTML = ""; return; }
+  const where = mode === "local" ? "Your work is saved in this browser on this computer. Download a backup now and then to keep a copy or move it to another computer." : "This browser isn't saving your work.";
+  f.innerHTML = `<span>${where}</span>
+    <button class="btn small" data-act="backup">Download backup</button>
+    ${canWrite ? `<button class="btn small" data-act="restore">Restore from backup</button>` : ""}`;
+}
+
+function autoGrow(el){ el.style.height = "auto"; el.style.height = Math.max(el.scrollHeight + 2, el.rows === 1 ? 38 : 62) + "px"; }
+
+// ================= events =================
+document.addEventListener("input", e => {
+  const el = e.target;
+  if (el.tagName === "TEXTAREA") autoGrow(el);
+  if (el.dataset && el.dataset.cf && editing) {
+    const t = terms.get(currentId); const w = t && t.weeks.find(x => x.id === editing.wid);
+    if (w && canWrite) { w[el.dataset.cf] = el.value; scheduleSave(t.id); }
+    return;
+  }
+  const wEl = el.closest("[data-week]"); if (!wEl || !canWrite) return;
+  const t = terms.get(currentId); if (!t) return;
+  const w = t.weeks.find(x => x.id === wEl.dataset.week); if (!w) return;
+  if (el.dataset.f) { w[el.dataset.f] = el.value; refreshRow(w); }
+  else if (el.dataset.lf) { w.links[+el.closest("[data-link]").dataset.link][el.dataset.lf] = el.value; refreshRow(w); }
+  else return;
+  scheduleSave(t.id);
+});
+document.addEventListener("change", e => {
+  const el = e.target;
+  if (el.id === "termSel") { currentId = el.value; lsSet("cp.current", currentId); openWeek = null; view = "schedule"; render(); return; }
+  if (el.id === "welcomeFile") { const f = el.files[0]; el.value = ""; if (f) openNewTerm({ course: "", newCourse: true, file: f }); return; }
+  if (el.id === "restoreInput") { restore(el.files[0]); el.value = ""; return; }
+  if (el.dataset && el.dataset.move) {
+    const wid = el.closest("[data-week]").dataset.week;
+    if (el.value !== wid) moveItem(el.dataset.move, wid, el.value);
+    return;
+  }
+  if (!(el.dataset && el.dataset.lf === "url")) return;
+  const box = el.closest(".linkrow").lastElementChild;
+  let a = box.querySelector("a.open");
+  if (!el.value.trim()) { a && a.remove(); return; }
+  if (!a) { a = document.createElement("a"); a.className = "btn link open"; a.target = "_blank"; a.rel = "noopener"; a.textContent = "Open"; box.prepend(a); }
+  a.href = safeUrl(el.value);
+});
+document.addEventListener("toggle", e => {
+  const el = e.target;
+  if (el.classList && el.classList.contains("history")) lsSet("cp.histOpen", el.open ? "1" : "0");
+  if (el.classList && el.classList.contains("plan")) { lsSet("cp.planOpen", el.open ? "1" : "0"); el.querySelectorAll("textarea").forEach(autoGrow); }
+}, true);
+
+$("#newTermBtn").addEventListener("click", () => openNewTerm({ course: currentCourse }));
+
+function redrawOpen(t){
+  const tbody = document.querySelector("table.sched tbody");
+  if (!tbody) return render();
+  tbody.innerHTML = t.weeks.map(w => rowHtml(t, w)).join("");
+  tbody.querySelectorAll("textarea").forEach(autoGrow);
+}
+
+document.addEventListener("click", async e => {
+  const cell = e.target.closest && e.target.closest("td[data-edit]");
+  if (cell && canWrite && !e.target.closest("[data-act]") && !e.target.closest(".grip") && !cell.classList.contains("editing")) { startEdit(cell); return; }
+  const b = e.target.closest("[data-act]"); if (!b) return;
+  if (e.target.closest("a")) return;
+  const act = b.dataset.act;
+  const t = terms.get(currentId);
+  const wid = b.dataset.row || b.closest("[data-week]")?.dataset.week || b.closest("tr[data-row]")?.dataset.row;
+  const w = t && wid ? t.weeks.find(x => x.id === wid) : null;
+  switch (act) {
+    case "course": {
+      currentCourse = b.dataset.c; const first = termsOf(currentCourse)[0];
+      currentId = first ? first.id : null; lsSet("cp.current", currentId); openWeek = null; view = "schedule"; render(); break;
+    }
+    case "newcourse": openNewTerm({ course: "", newCourse: true }); break;
+    case "startupload": $("#welcomeFile").click(); break;
+    case "startblank": openNewTerm({ course: "", newCourse: true, blank: true }); break;
+    case "toggle": {
+      openWeek = openWeek === w.id ? null : w.id; redrawOpen(t);
+      if (openWeek) document.querySelector(`tr[data-row="${CSS.escape(w.id)}"]`)?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+      break;
+    }
+    case "close": openWeek = null; redrawOpen(t); break;
+    case "view": view = b.dataset.v; render(); break;
+    case "addlink": (w.links ||= []).push({ title:"", url:"", note:"" }); redrawOpen(t);
+      { const rows = document.querySelectorAll(`[data-week="${CSS.escape(w.id)}"] .linkrow`); rows[rows.length-1]?.querySelector("input")?.focus(); }
+      scheduleSave(t.id); break;
+    case "dellink": w.links.splice(+b.closest("[data-link]").dataset.link, 1); redrawOpen(t); scheduleSave(t.id); break;
+    case "addweek": {
+      const nums = t.weeks.map(weekNum).filter(n => n != null);
+      const nw = blankWeek((nums.length ? Math.max(...nums) : t.weeks.length) + 1);
+      t.weeks.push(nw); redrawOpen(t); scheduleSave(t.id);
+      { const td = document.querySelector(`tr[data-row="${CSS.escape(nw.id)}"] td[data-edit="topic"]`); if (td) { td.scrollIntoView({ block: "center" }); startEdit(td); } }
+      break;
+    }
+    case "delweek":
+      confirmBox(`Delete ${w.label}?`, "This removes the week from this term, along with its notes and links.", "Delete", () => {
+        t.weeks = t.weeks.filter(x => x.id !== w.id); openWeek = null; redrawOpen(t); scheduleSave(t.id);
+      }); break;
+    case "editterm": openRename(t); break;
+    case "dates": openDates(t); break;
+    case "copynext": openCopyNext(t); break;
+    case "delterm":
+      confirmBox(`Delete ${t.term}?`, `This permanently removes the ${esc(t.term)} schedule for ${esc(t.course)} and all of its notes. Other terms aren't affected.`, "Delete term", async () => {
+        await removeTerm(t.id); currentId = null; pickCurrent(); render();
+      }); break;
+    case "copytable": copyTable(t); break;
+    case "worddoc": {
+      const ok = await saveFile(`${fileSafe(t.course)} - ${fileSafe(t.term)}.docx`, buildDocx(t), "application/vnd.openxmlformats-officedocument.wordprocessingml.document");
+      if (ok) toast("Word file downloaded"); break;
+    }
+    case "backup": {
+      const data = JSON.stringify({ app: "Free Course Planner", version: 1, exportedAt: new Date().toISOString(), terms: allTerms() }, null, 1);
+      const ok = await saveFile(`Free Course Planner backup ${new Date().toISOString().slice(0,10)}.json`, data, "application/json");
+      if (ok) toast("Backup downloaded"); break;
+    }
+    case "restore": e.preventDefault(); $("#restoreInput").click(); break;
+  }
+});
+
+// ================= moving classes & assignments =================
+const CLASS_FIELDS = ["topic", "readings", "activity", "links", "reflection", "changes"];
+const ASG_FIELDS = ["assignments"];
+function moveItem(kind, fromId, toId){
+  const t = terms.get(currentId); if (!t) return;
+  const slots = t.weeks.filter(w => !w.holiday);
+  const fi = slots.findIndex(w => w.id === fromId), ti = slots.findIndex(w => w.id === toId);
+  if (fi < 0 || ti < 0 || fi === ti) return;
+  const before = clone(t.weeks);
+  const fields = kind === "class" ? CLASS_FIELDS : ASG_FIELDS;
+  const items = slots.map(w => Object.fromEntries(fields.map(f => [f, w[f]])));
+  let m;
+  if (kind === "class") { [m] = items.splice(fi, 1); items.splice(ti, 0, m); }      // classes keep their sequence: others shift
+  else { m = items[fi]; [items[fi], items[ti]] = [items[ti], items[fi]]; }          // assignments trade places; other due dates stay put
+  slots.forEach((w, i) => Object.assign(w, items[i]));
+  const name = kind === "class" ? (firstLine(m.topic) || "Class") : (firstLine(m.assignments) || "Assignments");
+  if (kind === "class" && openWeek) openWeek = slots[ti].id;
+  render(); scheduleSave(t.id);
+  flashRow(slots[ti].id, kind);
+  toast(`Moved “${name.length > 40 ? name.slice(0, 38) + "…" : name}” to ${slots[ti].label}`, "Undo", () => {
+    const cur = terms.get(t.id); if (!cur) return;
+    cur.weeks = before; render(); scheduleSave(t.id);
+  });
+}
+function flashRow(id, kind){
+  const tr = document.querySelector(`tr[data-row="${CSS.escape(id)}"]`); if (!tr) return;
+  tr.classList.add(kind === "class" ? "hl-class" : "hl-asg");
+  setTimeout(() => tr.classList.remove("hl-class", "hl-asg"), 1600);
+}
+let drag = null; // {kind, id}
+const clearDrop = () => document.querySelectorAll(".drop-target").forEach(x => x.classList.remove("drop-target"));
+document.addEventListener("dragstart", e => {
+  const td = e.target.closest && e.target.closest("td[data-drag]"); if (!td || !canWrite) return;
+  const tr = td.closest("tr[data-row]");
+  drag = { kind: td.dataset.drag, id: tr.dataset.row };
+  e.dataTransfer.effectAllowed = "move";
+  e.dataTransfer.setData("text/x-course-move", drag.kind);
+  const cls = drag.kind === "class" ? ".g-class" : ".g-asg";
+  setTimeout(() => tr.querySelectorAll(cls).forEach(c => c.classList.add("drag-src")), 0);
+});
+document.addEventListener("dragover", e => {
+  if (!drag) return;
+  const tr = e.target.closest && e.target.closest("tr.row[data-row]");
+  if (!tr) return;
+  e.preventDefault(); e.dataTransfer.dropEffect = "move";
+  const cls = drag.kind === "class" ? ".g-class" : ".g-asg";
+  if (!tr.querySelector(cls + ".drop-target")) { clearDrop(); if (tr.dataset.row !== drag.id) tr.querySelectorAll(cls).forEach(c => c.classList.add("drop-target")); }
+});
+document.addEventListener("drop", e => {
+  if (!drag) return;
+  e.preventDefault(); e.stopPropagation();
+  const tr = e.target.closest && e.target.closest("tr.row[data-row]");
+  const d = drag; drag = null; clearDrop();
+  if (tr && tr.dataset.row !== d.id) moveItem(d.kind, d.id, tr.dataset.row);
+  else render();
+}, true);
+document.addEventListener("dragend", () => { if (drag) { drag = null; clearDrop(); document.querySelectorAll(".drag-src").forEach(x => x.classList.remove("drag-src")); } });
+
+// ================= calendar =================
+const MONTHS = ["Jan.","Feb.","Mar.","Apr.","May","June","July","Aug.","Sept.","Oct.","Nov.","Dec."];
+const DAYS = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+const parseISO = s => { const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s || ""); return m ? new Date(+m[1], +m[2]-1, +m[3]) : null; };
+const toISO = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+const fmtDate = d => `${MONTHS[d.getMonth()]} ${d.getDate()}`;
+const addDays = (d, n) => new Date(d.getFullYear(), d.getMonth(), d.getDate() + n);
+const dayDiff = (a, b) => Math.round((b - a) / 86400000);
+
+// Week 1 is the week of the first class. A week starts on the first meeting day of the
+// pattern (e.g. Tue for Tue/Thu, Sat for a Sat/Sun class), so a class's sessions never split across weeks.
+function weekAnchorDay(days){
+  const ds = [...new Set(days)].sort((a, b) => a - b);
+  if (ds.length === 1) return ds[0];
+  let best = ds[0], gap = -1;
+  ds.forEach((d, i) => { const prev = ds[(i - 1 + ds.length) % ds.length]; const g = (d - prev + 7) % 7 || 7; if (g > gap) { gap = g; best = d; } });
+  return best;
+}
+function listMeetings(cal, neededWeeks){
+  const start = parseISO(cal.start); if (!start || !cal.days || !cal.days.length) return [];
+  const end = parseISO(cal.end);
+  const multi = cal.days.length > 1;
+  let first = null;
+  for (let i = 0; i < 7; i++) { const d = addDays(start, i); if (cal.days.includes(d.getDay())) { first = d; break; } }
+  if (!first) return [];
+  const anchor = weekAnchorDay(cal.days);
+  const weekStart = addDays(first, -((first.getDay() - anchor + 7) % 7));
+  const out = []; let classWeeks = 0, lastClassWeek = 0;
+  for (let i = 0; i < 550; i++) {
+    const d = addDays(first, i);
+    if (end && d > end) break;
+    if (!cal.days.includes(d.getDay())) continue;
+    const wk = Math.floor(dayDiff(weekStart, d) / 7) + 1;
+    if (!end && classWeeks >= neededWeeks && wk > lastClassWeek) break;
+    const iso = toISO(d);
+    const hol = (cal.holidays || []).find(h => h.from && iso >= h.from && iso <= (h.to || h.from));
+    out.push({ iso, wk, dow: d.getDay(), date: fmtDate(d) + (multi ? ` (${DAYS[d.getDay()]})` : ""), holiday: hol ? (hol.name || "Holiday") : null });
+    if (!hol && wk !== lastClassWeek) { classWeeks++; lastClassWeek = wk; }
+  }
+  // labels: "Week 3" for one meeting a week; "Week 3 – Session A/B…" when the class meets more often
+  const perWeek = {};
+  for (const m of out) {
+    const n = (perWeek[m.wk] = (perWeek[m.wk] || 0) + 1);
+    m.label = multi ? `Week ${m.wk} – Session ${String.fromCharCode(64 + n)}` : `Week ${m.wk}`;
+  }
+  return out;
+}
+// Group the classes being scheduled. If they're labelled by week ("Week 4", "Week 4 – Session B"),
+// each week's classes stay together in one calendar week. Otherwise ("Class 12", "Session 3"…) they
+// simply fill the class sessions in order.
+function contentPlan(items){
+  const weekly = items.length && items.filter(w => /week/i.test(w.label || "")).length >= items.length / 2;
+  if (!weekly) return { weekly: false, groups: items.map(w => [w]) };
+  const groups = []; let key;
+  for (const w of items) {
+    const n = /week/i.test(w.label || "") ? weekNum(w) : null;
+    if (n != null && n === key && groups.length) groups[groups.length - 1].push(w);
+    else { groups.push([w]); key = n; }
+  }
+  return { weekly: true, groups };
+}
+// Lay the classes onto the calendar; holidays get their own "No class" rows.
+function applyCalendar(contentWeeks, cal){
+  const items = contentWeeks.filter(w => !w.holiday);
+  const plan = contentPlan(items);
+  const sessionsPerWeek = Math.max(1, (cal.days || []).length);
+  const neededWeeks = plan.weekly ? (plan.groups.length || 15) : Math.ceil((items.length || 15) / sessionsPerWeek);
+  const meetings = listMeetings(cal, neededWeeks);
+  const byWeek = [];
+  for (const m of meetings) { if (!byWeek.length || byWeek[byWeek.length - 1].wk !== m.wk) byWeek.push({ wk: m.wk, ms: [] }); byWeek[byWeek.length - 1].ms.push(m); }
+  const rows = []; let gi = 0, queue = [];
+  const flat = plan.groups.flat(); let fi = 0;
+  for (const wkObj of byWeek) {
+    const classDays = wkObj.ms.filter(m => !m.holiday).length;
+    if (plan.weekly && classDays && !queue.length && gi < plan.groups.length) {
+      queue = plan.groups[gi++].slice();
+      // fewer meetings this week than classes planned: drop empty sessions before anything spills over
+      if (queue.length > classDays) { const full = queue.filter(w => !isEmptyClass(w)); queue = full.length >= classDays ? full : [...full, ...queue.filter(isEmptyClass).slice(0, classDays - full.length)]; }
+    }
+    for (const m of wkObj.ms) {
+      if (m.holiday) { rows.push({ ...blankWeek(0), label: m.label, date: m.date, iso: m.iso, holiday: true, topic: "No class — " + m.holiday }); continue; }
+      const base = (plan.weekly ? queue.shift() : flat[fi++]) || blankWeek(0);
+      rows.push({ ...base, label: m.label, date: m.date, iso: m.iso, holiday: false });
+    }
+  }
+  const left = plan.weekly ? [...queue, ...plan.groups.slice(gi).flat()] : flat.slice(fi);
+  for (const w of left) rows.push({ ...w, label: "Unscheduled", date: "", iso: "", holiday: false });
+  return rows;
+}
+const isEmptyClass = w => !["topic","readings","assignments","activity","reflection","changes"].some(f => String(w[f] || "").trim()) && !(w.links || []).some(l => l.url || l.title);
+function scheduleStats(rows){
+  const dated = rows.filter(r => r.iso);
+  return {
+    weeks: new Set(dated.map(r => weekNum(r))).size,
+    sessions: dated.filter(r => !r.holiday).length,
+    holidays: dated.filter(r => r.holiday),
+    unscheduled: rows.filter(r => !r.iso && !r.holiday).length,
+    first: dated[0], last: dated[dated.length - 1],
+  };
+}
+function commonHolidays(startISO, endISO){
+  const s = parseISO(startISO), e = parseISO(endISO) || (s && addDays(s, 140)); if (!s) return [];
+  const nth = (y, m, wd, n) => { const d = new Date(y, m, 1); const off = (wd - d.getDay() + 7) % 7; return new Date(y, m, 1 + off + (n - 1) * 7); };
+  const last = (y, m, wd) => { const d = new Date(y, m + 1, 0); return addDays(d, -((d.getDay() - wd + 7) % 7)); };
+  const out = [];
+  for (let y = s.getFullYear(); y <= e.getFullYear(); y++) {
+    const tg = nth(y, 10, 4, 4);
+    out.push(
+      { name: "Martin Luther King Jr. Day", from: toISO(nth(y, 0, 1, 3)) },
+      { name: "Presidents' Day", from: toISO(nth(y, 1, 1, 3)) },
+      { name: "César Chávez Day", from: `${y}-03-31` },
+      { name: "Memorial Day", from: toISO(last(y, 4, 1)) },
+      { name: "Juneteenth", from: `${y}-06-19` },
+      { name: "Independence Day", from: `${y}-07-04` },
+      { name: "Labor Day", from: toISO(nth(y, 8, 1, 1)) },
+      { name: "Indigenous Peoples' Day", from: toISO(nth(y, 9, 1, 2)) },
+      { name: "Veterans Day", from: `${y}-11-11` },
+      { name: "Thanksgiving Break", from: toISO(addDays(tg, -1)), to: toISO(addDays(tg, 2)) },
+    );
+  }
+  return out.filter(h => (h.to || h.from) >= toISO(s) && h.from <= toISO(e));
+}
+
+// Calendar editor: returns {html, mount(root) -> getCal()}
+function calendarEditor(cal, itemsArg){
+  const contentItems = typeof itemsArg === "function" ? itemsArg : () => itemsArg;
+  cal = clone(cal || { start: "", end: "", days: [], holidays: [] });
+  const html = `<div class="cal" id="calBox">
+      <div class="row2">
+        <div><label class="f">First class</label><input type="date" id="cStart" value="${esc(cal.start)}"></div>
+        <div><label class="f">Last class <span style="text-transform:none;font-weight:400">(optional)</span></label><input type="date" id="cEnd" value="${esc(cal.end)}"></div>
+      </div>
+      <div class="fld" style="margin-top:10px"><label class="f">Meets on</label>
+        <div class="daychips" id="cDays">${DAYS.map((d, i) => `<span class="daychip ${cal.days.includes(i)?"on":""}" data-d="${i}">${d}</span>`).join("")}</div></div>
+      <div class="fld" style="margin-bottom:0"><label class="f">Holidays &amp; no-class days</label>
+        <div class="holhead"><span>Name</span><span>Date</span><span>Through (optional)</span><span></span></div>
+        <div id="cHols"></div>
+        <button class="btn small" type="button" id="cAddHol">+ Add holiday</button>
+        <button class="btn small" type="button" id="cCommon">Add common holidays</button>
+      </div>
+      <div class="preview" id="cPrev"></div>
+    </div>`;
+  const mount = root => {
+    const q = s => root.querySelector(s);
+    const drawHols = () => {
+      q("#cHols").innerHTML = cal.holidays.map((h, i) => `<div class="holrow" data-h="${i}">
+        <input type="text" data-hf="name" value="${esc(h.name)}" placeholder="e.g. Spring Break">
+        <input type="date" data-hf="from" value="${esc(h.from)}">
+        <input type="date" data-hf="to" value="${esc(h.to || "")}">
+        <button class="btn link danger" type="button" data-hdel="${i}">✕</button></div>`).join("");
+      preview();
+    };
+    let onChange = null;
+    const preview = () => {
+      if (onChange) onChange(cal);
+      if (!cal.start) { q("#cPrev").textContent = "Pick the first class date to see the schedule."; return; }
+      if (!cal.days.length) { q("#cPrev").textContent = "Choose the day(s) the class meets."; return; }
+      const st = scheduleStats(applyCalendar(contentItems(), cal));
+      if (!st.first) { q("#cPrev").textContent = "No class days in that range."; return; }
+      let s = `${st.weeks} week${st.weeks===1?"":"s"}, ${st.sessions} class session${st.sessions===1?"":"s"} · ${st.first.date} to ${st.last.date}`;
+      if (st.holidays.length) s += ` · no class ${st.holidays.map(h => h.date).join(", ")}`;
+      if (st.unscheduled) s += ` — ${st.unscheduled} class${st.unscheduled===1?"":"es"} won't fit and will be listed as Unscheduled`;
+      q("#cPrev").textContent = s;
+    };
+    q("#cStart").addEventListener("change", e => {
+      cal.start = e.target.value;
+      const d = parseISO(cal.start);
+      if (d && !cal.days.length) { cal.days = [d.getDay()]; q(`#cDays [data-d="${d.getDay()}"]`).classList.add("on"); }
+      preview();
+    });
+    q("#cEnd").addEventListener("change", e => { cal.end = e.target.value; preview(); });
+    q("#cDays").addEventListener("click", e => {
+      const c = e.target.closest(".daychip"); if (!c) return;
+      const d = +c.dataset.d; c.classList.toggle("on");
+      cal.days = c.classList.contains("on") ? [...new Set([...cal.days, d])].sort() : cal.days.filter(x => x !== d);
+      preview();
+    });
+    q("#cHols").addEventListener("input", e => { const r = e.target.closest("[data-h]"); if (!r) return; cal.holidays[+r.dataset.h][e.target.dataset.hf] = e.target.value; preview(); });
+    q("#cHols").addEventListener("click", e => { const b = e.target.closest("[data-hdel]"); if (!b) return; cal.holidays.splice(+b.dataset.hdel, 1); drawHols(); });
+    q("#cAddHol").addEventListener("click", () => { cal.holidays.push({ name: "", from: "", to: "" }); drawHols(); q("#cHols .holrow:last-child input").focus(); });
+    q("#cCommon").addEventListener("click", () => {
+      if (!cal.start) { q("#cPrev").textContent = "Pick the first class date first."; return; }
+      const end = cal.end || (() => { const st = scheduleStats(applyCalendar(contentItems(), cal)); return st.last ? st.last.iso : ""; })();
+      const hits = commonHolidays(cal.start, end).filter(h => {
+        for (let d = parseISO(h.from); d <= parseISO(h.to || h.from); d = addDays(d, 1)) if (cal.days.includes(d.getDay())) return true;
+        return false;
+      }).filter(h => !cal.holidays.some(x => x.from === h.from));
+      if (!hits.length) { q("#cPrev").textContent = "None of the common holidays fall on your class days in this range."; return; }
+      cal.holidays.push(...hits); cal.holidays.sort((a, b) => (a.from||"").localeCompare(b.from||"")); drawHols();
+    });
+    drawHols();
+    const get = () => ({ ...cal, holidays: cal.holidays.filter(h => h.from) });
+    get.refresh = preview;
+    get.onChange = fn => { onChange = fn; };
+    get.set = c => {
+      Object.assign(cal, clone(c));
+      q("#cStart").value = cal.start || ""; q("#cEnd").value = cal.end || "";
+      q("#cDays").querySelectorAll(".daychip").forEach(ch => ch.classList.toggle("on", cal.days.includes(+ch.dataset.d)));
+      drawHols();
+    };
+    return get;
+  };
+  return { html, mount };
+}
+
+function openDates(t){
+  const content = t.weeks.filter(w => !w.holiday);
+  const ed = calendarEditor(t.calendar || guessCalendar(t), content);
+  modal(`<h3>Dates &amp; holidays — ${esc(t.term)}</h3>
+    <p class="muted" style="margin-top:-6px;font-size:14px">Your classes keep their order. They're laid onto the new dates, and holidays get their own “No class” rows.</p>
+    ${ed.html}
+    <div class="err" id="derr"></div>
+    <div class="actions"><button class="btn" data-close>Cancel</button><button class="btn primary" id="ok">Apply dates</button></div>`,
+  (m, close) => {
+    m.classList.add("wide");
+    const getCal = ed.mount(m);
+    m.querySelector("#ok").addEventListener("click", () => {
+      const cal = getCal();
+      if (!cal.start || !cal.days.length) { m.querySelector("#derr").textContent = "Pick a first class date and the day(s) it meets."; return; }
+      const before = clone(t.weeks);
+      t.calendar = cal; t.weeks = applyCalendar(t.weeks, cal);
+      close(); render(); flush(t.id);
+      toast("Dates updated", "Undo", () => { t.weeks = before; render(); flush(t.id); });
+    });
+  });
+}
+const nextTermName = s => /\b(19|20)\d{2}\b/.test(s) ? s.replace(/\b((?:19|20)\d{2})\b/, y => String(+y + 1)) : s + " (next)";
+function openCopyNext(t){
+  const content = t.weeks.filter(w => !w.holiday);
+  // no saved calendar: read the dates written in the schedule
+  const inf = !(t.calendar && t.calendar.start) ? inferDates(t.weeks) : null;
+  const old = t.calendar && t.calendar.start ? t.calendar : inf ? { start: toISO(inf.start), end: "", days: inf.days } : {};
+  const s = parseISO(old.start), e = parseISO(old.end);
+  // same weekday, one year later (52 weeks)
+  const cal = { start: s ? toISO(addDays(s, 364)) : "", end: e ? toISO(addDays(e, 364)) : "", days: (old.days || []).slice(), holidays: [] };
+  const ed = calendarEditor(cal, content);
+  modal(`<h3>Copy ${esc(t.term)} to a new term</h3>
+    <p class="muted" style="margin-top:-6px;font-size:14px">Brings over every class: topics, readings, assignments, activities and links. “How it went” and “Changes for next time” start blank, and this year's notes show under each week in the new term.</p>
+    <div class="fld"><label class="f">New term name</label><input type="text" id="cn" value="${esc(nextTermName(t.term))}"></div>
+    <div class="fld"><label class="f">Class dates</label>
+      <div class="choices">
+        <label class="choice"><input type="radio" name="dmode" value="cal" checked><div>Set the new dates<small>${s ? "Starts one year later on the same weekday. Adjust as needed and add the new year's holidays." : "Pick the first class, the day it meets, and any holidays."}</small></div></label>
+        <label class="choice"><input type="radio" name="dmode" value="keep"><div>Keep the same dates for now<small>You can set them later with “Dates &amp; holidays.”</small></div></label>
+      </div>
+      <div id="calWrap" style="margin-top:8px">${ed.html}</div></div>
+    <div class="err" id="cerr"></div>
+    <div class="actions"><button class="btn" data-close>Cancel</button><button class="btn primary" id="ok">Create new term</button></div>`,
+  (m, close) => {
+    m.classList.add("wide");
+    const getCal = ed.mount(m);
+    const cn = m.querySelector("#cn"); let cnTouched = false;
+    cn.addEventListener("input", () => { cnTouched = true; });
+    getCal.onChange(c => { const d = parseISO(c.start); if (d && !cnTouched && s && Math.abs(dayDiff(addDays(s, 364), d)) > 45) cn.value = termFromDate(d); });
+    m.querySelectorAll('input[name="dmode"]').forEach(r => r.addEventListener("change", () => {
+      m.querySelector("#calWrap").style.display = m.querySelector('input[name="dmode"]:checked').value === "cal" ? "" : "none";
+    }));
+    m.querySelector("#ok").addEventListener("click", () => {
+      const err = m.querySelector("#cerr");
+      const name = m.querySelector("#cn").value.trim();
+      if (!name) { err.textContent = "Give the new term a name."; return; }
+      if (termsOf(t.course || "Untitled course").some(x => x.term.toLowerCase() === name.toLowerCase())) { err.textContent = `${t.course} already has a term called “${name}.”`; return; }
+      let weeks = t.weeks.map(w => ({ ...clone(w), id: uid(), reflection: "", changes: "" }));
+      let calendar = null;
+      if (m.querySelector('input[name="dmode"]:checked').value === "cal") {
+        calendar = getCal();
+        if (!calendar.start || !calendar.days.length) { err.textContent = "Pick the first class date and the day(s) it meets, or choose “Keep the same dates for now.”"; return; }
+        weeks = applyCalendar(weeks, calendar);
+      }
+      const id = uid();
+      terms.set(id, { id, course: t.course, term: name, createdAt: Date.now(), updatedAt: Date.now(), weeks, ...(calendar ? { calendar } : {}) });
+      currentId = id; lsSet("cp.current", id); openWeek = null; view = "schedule";
+      close(); render(); flush(id);
+      toast(`Created ${name}`);
+    });
+  });
+}
+// For a term with no saved calendar, guess the meeting day from its first date if possible
+function guessCalendar(t){ return { start: "", end: "", days: [], holidays: [] }; }
+
+// ================= export: table =================
+function tableHtmlFor(t){
+  const td = `style="border:1px solid #999;padding:4px 6px;vertical-align:top;font-family:Calibri,Arial,sans-serif;font-size:10pt"`;
+  const th = `style="border:1px solid #999;padding:4px 6px;background:#eeeeee;font-family:Calibri,Arial,sans-serif;font-size:10pt;font-weight:bold;font-style:italic;text-align:left"`;
+  const p = (arr, dash) => arr.map(l => `<p style="margin:0">${dash && !l.startsWith("(") ? "-" : ""}${esc(l)}</p>`).join("") || "&nbsp;";
+  return `<table style="border-collapse:collapse;width:100%">
+<tr><th ${th}>Class #<br>Date</th><th ${th}>Topic</th><th ${th}>Reading</th><th ${th}>Assignments Due</th></tr>
+${t.weeks.map(w => `<tr><td ${td}>${p([w.label, ...lines(w.date)])}</td><td ${td}>${p(lines(w.topic))}</td><td ${td}>${p(lines(w.readings), true)}</td><td ${td}>${p(lines(w.assignments), true)}</td></tr>`).join("\n")}
+</table>`;
+}
+function tableTextFor(t){
+  const cell = s => lines(s).join(" / ");
+  return ["Class # / Date\tTopic\tReading\tAssignments Due",
+    ...t.weeks.map(w => [w.label + (w.date ? " (" + lines(w.date).join(" ") + ")" : ""), cell(w.topic), cell(w.readings), cell(w.assignments)].join("\t"))].join("\n");
+}
+async function copyTable(t){
+  const html = tableHtmlFor(t), text = tableTextFor(t);
+  try {
+    await navigator.clipboard.write([new ClipboardItem({ "text/html": new Blob([html], { type: "text/html" }), "text/plain": new Blob([text], { type: "text/plain" }) })]);
+    toast("Table copied — paste it into Word"); return;
+  } catch (e) {}
+  // fallback: select a rendered copy and use the browser's copy command
+  const box = document.createElement("div");
+  box.contentEditable = "true"; box.style.cssText = "position:fixed;left:-9999px;top:0;background:#fff";
+  box.innerHTML = html; document.body.appendChild(box);
+  const r = document.createRange(); r.selectNodeContents(box);
+  const sel = getSelection(); sel.removeAllRanges(); sel.addRange(r);
+  let ok = false; try { ok = document.execCommand("copy"); } catch(e){}
+  sel.removeAllRanges(); box.remove();
+  toast(ok ? "Table copied — paste it into Word" : "Copying isn't allowed here. Use Download Word instead.");
+}
+
+// ================= export: .docx =================
+const CRC = (() => { const t = new Uint32Array(256); for (let n = 0; n < 256; n++) { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1; t[n] = c >>> 0; } return t; })();
+const crc32 = u8 => { let c = 0xFFFFFFFF; for (let i = 0; i < u8.length; i++) c = CRC[(c ^ u8[i]) & 0xFF] ^ (c >>> 8); return (c ^ 0xFFFFFFFF) >>> 0; };
+function zipStore(files){ // [{name, text}]
+  const enc = new TextEncoder(), parts = [], central = []; let off = 0;
+  for (const f of files) {
+    const name = enc.encode(f.name), data = enc.encode(f.text), crc = crc32(data);
+    const lh = new DataView(new ArrayBuffer(30));
+    lh.setUint32(0, 0x04034b50, true); lh.setUint16(4, 20, true); lh.setUint16(8, 0, true);
+    lh.setUint32(14, crc, true); lh.setUint32(18, data.length, true); lh.setUint32(22, data.length, true); lh.setUint16(26, name.length, true);
+    parts.push(new Uint8Array(lh.buffer), name, data);
+    const ch = new DataView(new ArrayBuffer(46));
+    ch.setUint32(0, 0x02014b50, true); ch.setUint16(4, 20, true); ch.setUint16(6, 20, true);
+    ch.setUint32(16, crc, true); ch.setUint32(20, data.length, true); ch.setUint32(24, data.length, true); ch.setUint16(28, name.length, true); ch.setUint32(42, off, true);
+    central.push(new Uint8Array(ch.buffer), name);
+    off += 30 + name.length + data.length;
+  }
+  const csize = central.reduce((s, a) => s + a.length, 0);
+  const end = new DataView(new ArrayBuffer(22));
+  end.setUint32(0, 0x06054b50, true); end.setUint16(8, files.length, true); end.setUint16(10, files.length, true);
+  end.setUint32(12, csize, true); end.setUint32(16, off, true);
+  return new Blob([...parts, ...central, new Uint8Array(end.buffer)], { type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document" });
+}
+function buildDocx(t){
+  const x = s => String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+  const run = (s, o = {}) => `<w:r><w:rPr><w:rFonts w:ascii="Calibri" w:hAnsi="Calibri"/>${o.b?"<w:b/>":""}${o.i?"<w:i/>":""}<w:sz w:val="${o.sz||20}"/></w:rPr><w:t xml:space="preserve">${x(s)}</w:t></w:r>`;
+  const para = (s, o) => `<w:p><w:pPr><w:spacing w:before="0" w:after="0"/></w:pPr>${run(s, o)}</w:p>`;
+  const widths = [1500, 2900, 3000, 2400];
+  const cell = (ps, i, shade) => `<w:tc><w:tcPr><w:tcW w:w="${widths[i]}" w:type="dxa"/>${shade?'<w:shd w:val="clear" w:color="auto" w:fill="EEEEEE"/>':""}</w:tcPr>${ps.length ? ps.join("") : para("")}</w:tc>`;
+  const b = 'w:val="single" w:sz="4" w:space="0" w:color="999999"';
+  const head = `<w:tr><w:trPr><w:tblHeader/></w:trPr>${["Class # / Date","Topic","Reading","Assignments Due"].map((h,i) => cell([para(h, {b:1, i:1})], i, true)).join("")}</w:tr>`;
+  const rows = t.weeks.map(w => `<w:tr><w:trPr><w:cantSplit/></w:trPr>${[
+    [para(w.label, {b:1}), ...lines(w.date).map(l => para(l))],
+    lines(w.topic).map(l => para(l)),
+    lines(w.readings).map(l => para((l.startsWith("(") ? "" : "-") + l)),
+    lines(w.assignments).map(l => para((l.startsWith("(") ? "" : "-") + l)),
+  ].map((ps, i) => cell(ps, i)).join("")}</w:tr>`).join("");
+  const docXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body>
+<w:p><w:pPr><w:spacing w:after="60"/></w:pPr>${run(t.course, {b:1, sz:28})}</w:p>
+<w:p><w:pPr><w:spacing w:after="200"/></w:pPr>${run(t.term + " — Course Detailed Schedule", {i:1, sz:22})}</w:p>
+<w:tbl><w:tblPr><w:tblW w:w="${widths.reduce((a,c)=>a+c,0)}" w:type="dxa"/><w:tblLayout w:type="fixed"/><w:tblBorders><w:top ${b}/><w:left ${b}/><w:bottom ${b}/><w:right ${b}/><w:insideH ${b}/><w:insideV ${b}/></w:tblBorders><w:tblCellMar><w:top w:w="60" w:type="dxa"/><w:left w:w="100" w:type="dxa"/><w:bottom w:w="60" w:type="dxa"/><w:right w:w="100" w:type="dxa"/></w:tblCellMar></w:tblPr>
+<w:tblGrid>${widths.map(v => `<w:gridCol w:w="${v}"/>`).join("")}</w:tblGrid>${head}${rows}</w:tbl>
+<w:p/><w:sectPr><w:pgSz w:w="12240" w:h="15840"/><w:pgMar w:top="1080" w:right="1080" w:bottom="1080" w:left="1080" w:header="720" w:footer="720" w:gutter="0"/></w:sectPr>
+</w:body></w:document>`;
+  return zipStore([
+    { name: "[Content_Types].xml", text: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/></Types>` },
+    { name: "_rels/.rels", text: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>` },
+    { name: "word/document.xml", text: docXml },
+  ]);
+}
+
+// ================= restore =================
+async function restore(file){
+  if (!file) return;
+  let data;
+  try { data = JSON.parse(await file.text()); } catch(e){ toast("That file isn't a Free Course Planner backup."); return; }
+  const list = Array.isArray(data.terms) ? data.terms.filter(t => t && t.id && Array.isArray(t.weeks)) : [];
+  if (!list.length) { toast("No terms found in that backup."); return; }
+  const clash = list.filter(t => terms.has(t.id)).length;
+  confirmBox(`Restore ${list.length} term${list.length>1?"s":""}?`,
+    clash ? `${clash} of them already exist here and will be replaced with the backup's version. Other terms are kept.` : "They'll be added alongside what's already here.",
+    "Restore", async () => {
+      for (const t of list) { terms.set(t.id, t); await flush(t.id); }
+      pickCurrent(); render(); toast("Backup restored");
+    }, true);
+}
+
+// ================= modals =================
+function modal(html, onMount){
+  const root = $("#modalRoot");
+  root.innerHTML = `<div class="scrim"><div class="modal" role="dialog">${html}</div></div>`;
+  const close = () => root.innerHTML = "";
+  root.querySelector(".scrim").addEventListener("mousedown", e => { if (e.target.classList.contains("scrim")) close(); });
+  root.querySelectorAll("[data-close]").forEach(x => x.addEventListener("click", close));
+  onMount && onMount(root.querySelector(".modal"), close);
+}
+function confirmBox(title, text, okLabel, onOk, calm){
+  modal(`<h3>${esc(title)}</h3><p class="muted">${text}</p><div class="actions"><button class="btn" data-close>Cancel</button><button class="btn primary" ${calm?"":'style="background:var(--warn);border-color:var(--warn)"'} id="ok">${esc(okLabel)}</button></div>`,
+    (m, close) => m.querySelector("#ok").addEventListener("click", () => { close(); onOk(); }));
+}
+function openRename(t){
+  modal(`<h3>Rename</h3>
+    <div class="fld"><label class="f">Course</label><input type="text" id="rc" value="${esc(t.course)}"></div>
+    <div class="fld"><label class="f">Term</label><input type="text" id="rt" value="${esc(t.term)}"></div>
+    <label style="font-size:14px;display:flex;gap:8px;align-items:center"><input type="checkbox" id="rall" checked> Rename the course on all of its terms</label>
+    <div class="actions"><button class="btn" data-close>Cancel</button><button class="btn primary" id="ok">Save</button></div>`,
+    (m, close) => m.querySelector("#ok").addEventListener("click", () => {
+      const oldC = t.course, newC = m.querySelector("#rc").value.trim() || t.course;
+      t.term = m.querySelector("#rt").value.trim() || t.term;
+      const targets = m.querySelector("#rall").checked ? termsOf(oldC || "Untitled course") : [t];
+      targets.forEach(x => { x.course = newC; flush(x.id); });
+      if (!targets.includes(t)) { t.course = newC; }
+      flush(t.id); currentCourse = newC; close(); render();
+    }));
+}
+// ---------- term names & dates found in a schedule ----------
+const MONTH_RE = "(jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec)[a-z]*\\.?";
+const MONTH_IDX = { jan:0, feb:1, mar:2, apr:3, may:4, jun:5, jul:6, aug:7, sep:8, sept:8, oct:9, nov:10, dec:11 };
+// "Sept. 15", "15 Sept", "September 15, 2026", "9/15" → {m, d, y?}
+function findDate(s){
+  s = String(s || "");
+  let r = new RegExp("\\b" + MONTH_RE + "\\s+(\\d{1,2})(?:st|nd|rd|th)?\\b(?:,?\\s+(\\d{4}))?", "i").exec(s);
+  if (r) return { m: MONTH_IDX[r[1].toLowerCase()], d: +r[2], y: r[3] ? +r[3] : null };
+  r = new RegExp("\\b(\\d{1,2})(?:st|nd|rd|th)?\\s+" + MONTH_RE + "(?:\\s+(\\d{4}))?", "i").exec(s);
+  if (r) return { m: MONTH_IDX[r[2].toLowerCase()], d: +r[1], y: r[3] ? +r[3] : null };
+  r = /\b(\d{1,2})\/(\d{1,2})(?:\/(\d{2,4}))?\b/.exec(s);
+  if (r && +r[1] <= 12) return { m: +r[1] - 1, d: +r[2], y: r[3] ? (+r[3] < 100 ? 2000 + +r[3] : +r[3]) : null };
+  return null;
+}
+// Dates in a schedule rarely carry a year, so pick the year that puts the first class closest to today,
+// then roll into the next year when the months wrap (Dec → Jan).
+function inferDates(weeks){
+  const found = weeks.map(w => w.holiday ? null : findDate(w.date || "") || null);
+  const firstI = found.findIndex(Boolean); if (firstI < 0) return null;
+  const today = new Date(), f = found[firstI];
+  let year = f.y;
+  if (!year) {
+    let best = null;
+    for (let y = today.getFullYear() - 1; y <= today.getFullYear() + 1; y++) {
+      const dist = Math.abs(new Date(y, f.m, f.d) - today);
+      if (best === null || dist < best.dist) best = { y, dist };
+    }
+    year = best.y;
+  }
+  const dates = []; let prev = null;
+  for (const x of found) {
+    if (!x) { dates.push(null); continue; }
+    let y = x.y || year, d = new Date(y, x.m, x.d);
+    if (!x.y && prev && d < addDays(prev, -40)) { y++; d = new Date(y, x.m, x.d); }
+    if (isNaN(d)) { dates.push(null); continue; }
+    year = y; prev = d; dates.push(d);
+  }
+  const real = dates.filter(Boolean); if (!real.length) return null;
+  const counts = [0,0,0,0,0,0,0]; real.forEach(d => counts[d.getDay()]++);
+  const max = Math.max(...counts);
+  let days = counts.map((c, i) => c >= Math.max(2, max * 0.5) ? i : -1).filter(i => i >= 0);
+  if (!days.length) days = [counts.indexOf(max)];
+  const start = real.find(d => days.includes(d.getDay())) || real[0];
+  return { first: real[0], last: real[real.length - 1], start, days, count: real.length };
+}
+function termFromDate(d){
+  const m = d.getMonth();
+  return `${m <= 4 ? "Spring" : m <= 6 ? "Summer" : "Fall"} ${d.getFullYear()}`;
+}
+function termSuggestions(){
+  const y = new Date().getFullYear(), out = [];
+  for (const yy of [y - 1, y, y + 1, y + 2]) out.push(`Spring ${yy}`, `Summer ${yy}`, `Fall ${yy}`, `Winter ${yy}`, `Semester 1 ${yy}`, `Semester 2 ${yy}`, `Term 1 ${yy}`, `Term 2 ${yy}`, `Term 3 ${yy}`);
+  return out;
+}
+const fmtLong = d => `${fmtDate(d)}, ${d.getFullYear()}`;
+
+function openNewTerm({ course = "", newCourse = false, file = null, blank = false } = {}){
+  const courses = courseList();
+  const prior = course ? termsOf(course) : [];
+  const anyPrior = allTerms();
+  let picked = file, parsedWeeks = null, found = null;
+  const blank15 = Array.from({ length: 15 }, (_, i) => blankWeek(i + 1));
+  let contentNow = blank15;
+  const ed = calendarEditor({ start: "", end: "", days: [], holidays: [] }, () => contentNow);
+  modal(`<h3>${newCourse ? "Add a course" : "New term"}</h3>
+    <div class="fld"><label class="f">Course</label>
+      <input type="text" id="nc" list="courseList" value="${esc(course)}" placeholder="e.g. Intro to Psychology">
+      <datalist id="courseList">${courses.map(c => `<option value="${esc(c)}">`).join("")}</datalist></div>
+    <div class="fld"><label class="f">Start from</label>
+      <div class="choices">
+        <label class="choice"><input type="radio" name="src" value="docx" ${(prior.length && !file) || blank ? "" : "checked"}><div>A Word schedule (.docx)<small>Reads the week-by-week table: class #, date, topic, readings and assignments.</small>
+          <div class="dropzone" id="dz">${file ? `<b>${esc(file.name)}</b> ready` : `Drag your Word file here, or <b>click to choose</b>`}</div>
+          <input type="file" id="nf" accept=".docx" hidden></div></label>
+        ${anyPrior.length ? `<label class="choice"><input type="radio" name="src" value="copy" ${prior.length && !file && !blank ? "checked" : ""}><div>Copy an earlier term<small>Brings over the schedule, activities and links with blank notes. Last year's notes stay visible under each week.</small>
+          <select id="ncopy" style="margin-top:6px">${anyPrior.map(t => `<option value="${esc(t.id)}" ${prior[0] && t.id===prior[0].id?"selected":""}>${esc(t.course)} — ${esc(t.term)}</option>`).join("")}</select></div></label>` : ""}
+        <label class="choice"><input type="radio" name="src" value="blank" ${blank ? "checked" : ""}><div>Blank schedule<small>15 empty weeks to fill in.</small></div></label>
+      </div></div>
+    <div class="fld"><label class="f">Class dates</label>
+      <div class="choices">
+        <label class="choice" id="keepChoice"><input type="radio" name="dmode" value="keep"><div>Use the dates in the schedule<small id="keepNote">Keeps the dates exactly as they're written in the Word file or earlier term.</small></div></label>
+        <label class="choice"><input type="radio" name="dmode" value="cal" checked><div>Set the dates with a calendar<small>Pick the first class, the day(s) it meets, and any holidays.</small></div></label>
+      </div>
+      <div id="calWrap" style="margin-top:8px">${ed.html}</div></div>
+    <div class="fld"><label class="f">Term name</label>
+      <input type="text" id="nt" list="termList" placeholder="Filled in from your dates — or type your own, e.g. Fall 2026, Semester 1 2027, Term 2">
+      <datalist id="termList">${termSuggestions().map(s => `<option value="${esc(s)}">`).join("")}</datalist></div>
+    <div class="err" id="nerr"></div>
+    <div class="actions"><button class="btn" data-close>Cancel</button><button class="btn primary" id="ok">Create</button></div>`,
+  (m, close) => {
+    m.classList.add("wide");
+    const getCal = ed.mount(m);
+    const nt = m.querySelector("#nt");
+    let termTouched = false;
+    nt.addEventListener("input", () => { termTouched = !!nt.value.trim(); });
+    const setTerm = name => { if (!termTouched && name) nt.value = name; };
+    const dmode = () => m.querySelector('input[name="dmode"]:checked').value;
+    const setDmode = v => { m.querySelector(`input[name="dmode"][value="${v}"]`).checked = true; syncD(); };
+    // term name follows the dates until the person types their own
+    const nameFromDates = () => {
+      if (dmode() === "cal") { const d = parseISO(getCal().start); if (d) setTerm(termFromDate(d)); }
+      else if (found) setTerm(termFromDate(found.first));
+    };
+    getCal.onChange(() => { if (dmode() === "cal") nameFromDates(); });
+    const syncD = () => { m.querySelector("#calWrap").style.display = dmode() === "cal" ? "" : "none"; nameFromDates(); };
+    m.querySelectorAll('input[name="dmode"]').forEach(r => r.addEventListener("change", syncD));
+    const srcNow = () => m.querySelector('input[name="src"]:checked').value;
+    const syncSrc = () => {
+      const s = srcNow();
+      found = null;
+      if (s === "copy") {
+        const from = terms.get(m.querySelector("#ncopy").value);
+        contentNow = from ? from.weeks.filter(w => !w.holiday) : blank15;
+        if (from) {
+          if (!termTouched) nt.value = nextTermName(from.term);
+          const oc = from.calendar, os = oc && parseISO(oc.start);
+          if (os) { getCal.set({ start: toISO(addDays(os, 364)), end: oc.end ? toISO(addDays(parseISO(oc.end), 364)) : "", days: (oc.days || []).slice(), holidays: [] }); setDmode("cal"); }
+          else { found = inferDates(from.weeks); setDmode("keep"); }
+        }
+      } else if (s === "blank") { contentNow = blank15; setDmode("cal"); }
+      else {
+        contentNow = parsedWeeks && parsedWeeks.length ? parsedWeeks : blank15;
+        found = parsedWeeks ? inferDates(parsedWeeks) : null;
+        if (found) {
+          getCal.set({ start: toISO(found.start), end: "", days: found.days, holidays: [] });
+          setDmode("keep");
+        }
+      }
+      m.querySelector("#keepNote").textContent = found
+        ? `Found ${found.count} dates, ${fmtLong(found.first)} to ${fmtLong(found.last)}. Keeps them exactly as written; you can edit any date later.`
+        : "Keeps the dates exactly as they're written in the Word file or earlier term.";
+      getCal.refresh(); nameFromDates();
+    };
+    m.querySelectorAll('input[name="src"]').forEach(r => r.addEventListener("change", syncSrc));
+    const dz = m.querySelector("#dz"), nf = m.querySelector("#nf");
+    const setFile = f => {
+      if (!f) return;
+      if (!/\.docx$/i.test(f.name)) { m.querySelector("#nerr").textContent = "Please use a Word .docx file (not .doc or PDF)."; return; }
+      picked = f; m.querySelector("#nerr").textContent = "";
+      dz.innerHTML = `<b>${esc(f.name)}</b> — reading…`; m.querySelector('input[value="docx"]').checked = true;
+      f.arrayBuffer().then(parseDocx).then(ws => {
+        if (picked !== f) return;
+        parsedWeeks = ws;
+        dz.innerHTML = ws.length ? `<b>${esc(f.name)}</b> — found ${ws.length} weeks` : `<b>${esc(f.name)}</b> — no schedule table found`;
+        syncSrc();
+      }).catch(() => { if (picked === f) { parsedWeeks = []; dz.innerHTML = `<b>${esc(f.name)}</b> — couldn't read this file`; } });
+    };
+    if (picked) { const f0 = picked; picked = null; setTimeout(() => setFile(f0), 0); }
+    dz.addEventListener("click", e => { e.preventDefault(); nf.click(); });
+    nf.addEventListener("change", () => setFile(nf.files[0]));
+    ["dragenter","dragover"].forEach(ev => dz.addEventListener(ev, e => { e.preventDefault(); e.stopPropagation(); dz.classList.add("over"); }));
+    ["dragleave","drop"].forEach(ev => dz.addEventListener(ev, e => { e.preventDefault(); dz.classList.remove("over"); }));
+    dz.addEventListener("drop", e => { e.stopPropagation(); setFile(e.dataTransfer.files[0]); });
+    m.querySelector("#ncopy")?.addEventListener("change", () => { m.querySelector('input[value="copy"]').checked = true; syncSrc(); });
+    syncSrc();
+    if (!course) setTimeout(() => m.querySelector("#nc").focus(), 0);
+    m.querySelector("#ok").addEventListener("click", async () => {
+      const err = m.querySelector("#nerr"), ok = m.querySelector("#ok"); err.textContent = "";
+      const c = m.querySelector("#nc").value.trim();
+      if (!c) { err.textContent = "Please enter a course name."; return; }
+      const src = srcNow();
+      let weeks;
+      try {
+        if (src === "docx") {
+          if (!picked) { err.textContent = "Drag in or choose a Word file first."; return; }
+          ok.textContent = "Reading…";
+          weeks = parsedWeeks && parsedWeeks.length ? parsedWeeks : await parseDocx(await picked.arrayBuffer());
+          if (!weeks.length) { err.textContent = "I couldn't find a week-by-week table in that document. Try a blank schedule instead."; ok.textContent = "Create"; return; }
+        } else if (src === "copy") {
+          const from = terms.get(m.querySelector("#ncopy").value);
+          weeks = from.weeks.map(w => ({ ...clone(w), id: uid(), reflection: "", changes: "" }));
+        } else weeks = blank15.map(w => ({ ...w, id: uid() }));
+      } catch (ex) {
+        console.error(ex); err.textContent = "That file couldn't be read. Make sure it's a Word .docx file."; ok.textContent = "Create"; return;
+      }
+      let calendar = null;
+      if (dmode() === "cal") {
+        const cal = getCal();
+        // no dates picked: keep whatever dates the schedule already has
+        if (cal.start && cal.days.length) { calendar = cal; weeks = applyCalendar(weeks, cal); }
+      }
+      const term = nt.value.trim() ||
+        (calendar ? termFromDate(parseISO(calendar.start)) : found ? termFromDate(found.first) : termFromDate(new Date()));
+      const id = uid();
+      terms.set(id, { id, course: c, term, createdAt: Date.now(), updatedAt: Date.now(), weeks, ...(calendar ? { calendar } : {}) });
+      currentId = id; currentCourse = c; lsSet("cp.current", id); openWeek = null; view = "schedule";
+      close(); render(); flush(id);
+    });
+  });
+}
+
+// whole-page drag & drop of a Word file
+let dragDepth = 0;
+const hasFiles = e => e.dataTransfer && [...e.dataTransfer.types].includes("Files");
+window.addEventListener("dragenter", e => { if (!hasFiles(e) || !canWrite || $("#modalRoot").innerHTML) return; dragDepth++; $("#pageDrop").classList.add("on"); });
+window.addEventListener("dragleave", () => { if (--dragDepth <= 0) { dragDepth = 0; $("#pageDrop").classList.remove("on"); } });
+window.addEventListener("dragover", e => { if (hasFiles(e)) e.preventDefault(); });
+window.addEventListener("drop", e => {
+  if (!hasFiles(e)) return;
+  e.preventDefault(); dragDepth = 0; $("#pageDrop").classList.remove("on");
+  if (!canWrite || $("#modalRoot").innerHTML) return;
+  const f = e.dataTransfer.files[0];
+  if (f && /\.json$/i.test(f.name)) { restore(f); return; }
+  openNewTerm({ course: currentCourse || "", newCourse: !currentCourse, file: f && /\.docx$/i.test(f.name) ? f : null });
+});
+
+// ---------- .docx reading (no external libraries) ----------
+async function unzip(buf, wanted){
+  const u8 = new Uint8Array(buf), dv = new DataView(buf);
+  let eocd = -1;
+  for (let i = u8.length - 22; i >= Math.max(0, u8.length - 70000); i--) if (dv.getUint32(i, true) === 0x06054b50) { eocd = i; break; }
+  if (eocd < 0) throw new Error("not a zip");
+  const count = dv.getUint16(eocd + 10, true);
+  let p = dv.getUint32(eocd + 16, true);
+  for (let k = 0; k < count; k++) {
+    if (dv.getUint32(p, true) !== 0x02014b50) break;
+    const method = dv.getUint16(p + 10, true), csize = dv.getUint32(p + 20, true);
+    const nlen = dv.getUint16(p + 28, true), elen = dv.getUint16(p + 30, true), clen = dv.getUint16(p + 32, true);
+    const loff = dv.getUint32(p + 42, true);
+    const name = new TextDecoder().decode(u8.subarray(p + 46, p + 46 + nlen));
+    if (name === wanted) {
+      const start = loff + 30 + dv.getUint16(loff + 26, true) + dv.getUint16(loff + 28, true);
+      const data = u8.subarray(start, start + csize);
+      if (method === 0) return new TextDecoder().decode(data);
+      const ds = new DecompressionStream("deflate-raw");
+      const out = new Blob([data]).stream().pipeThrough(ds);
+      return await new Response(out).text();
+    }
+    p += 46 + nlen + elen + clen;
+  }
+  throw new Error("missing " + wanted);
+}
+
+const W = "http://schemas.openxmlformats.org/wordprocessingml/2006/main";
+function paraText(p){
+  let s = "";
+  const walk = n => {
+    for (const c of n.childNodes) {
+      if (c.nodeType !== 1) continue;
+      if (c.namespaceURI === W && c.localName === "t") s += c.textContent;
+      else if (c.namespaceURI === W && (c.localName === "tab")) s += " ";
+      else if (c.namespaceURI === W && (c.localName === "br" || c.localName === "cr")) s += "\n";
+      else if (!(c.namespaceURI === W && c.localName === "tbl")) walk(c);
+    }
+  };
+  walk(p);
+  return s;
+}
+function cellLines(tc){
+  return [...tc.getElementsByTagNameNS(W, "p")].flatMap(p => paraText(p).split("\n")).map(s => s.replace(/\s+/g, " ").trim()).filter(Boolean);
+}
+const clean = lines => lines.map(l => l.replace(/^[-–•·]\s*/, "").trim()).filter(Boolean).join("\n");
+
+async function parseDocx(buf){
+  const xml = await unzip(buf, "word/document.xml");
+  const doc = new DOMParser().parseFromString(xml, "application/xml");
+  const tables = [...doc.getElementsByTagNameNS(W, "tbl")];
+  let best = [];
+  for (const tbl of tables) {
+    const rows = [...tbl.getElementsByTagNameNS(W, "tr")].filter(r => r.parentNode === tbl);
+    const grid = rows.map(r => [...r.childNodes].filter(c => c.namespaceURI === W && c.localName === "tc").map(cellLines));
+    const weeks = tableToWeeks(grid);
+    if (weeks.length > best.length) best = weeks;
+  }
+  return best;
+}
+function tableToWeeks(grid){
+  let hi = grid.findIndex(r => r.some(c => /topic/i.test(c.join(" "))));
+  const header = hi >= 0 ? grid[hi].map(c => c.join(" ").toLowerCase()) : [];
+  const col = re => header.findIndex(h => re.test(h));
+  let cTopic = col(/topic|subject|theme/), cRead = col(/reading/), cAsg = col(/assign|due|deliverable/);
+  let cWeek = col(/week|class|date|#/);
+  if (cWeek < 0) cWeek = 0;
+  if (cTopic < 0) cTopic = 1;
+  const out = [];
+  grid.slice(hi + 1).forEach((r, i) => {
+    if (!r.length) return;
+    const first = r[cWeek] || [];
+    const joined = first.join(" ");
+    const m = joined.match(/(week|class|session)\s*#?\s*(\d+)/i);
+    if (!m && !r.some(c => c.length)) return;
+    let label = m ? `Week ${m[2]}` : (first[0] || `Week ${out.length + 1}`);
+    let date = joined.replace(m ? m[0] : first[0] || "", "").replace(/[()]/g, " ").replace(/\s+/g, " ").trim();
+    out.push({
+      ...blankWeek(out.length + 1), label, date,
+      topic: clean(r[cTopic] || []),
+      readings: cRead >= 0 ? clean(r[cRead] || []) : "",
+      assignments: cAsg >= 0 ? clean(r[cAsg] || []) : "",
+    });
+  });
+  return out.filter(w => w.topic || w.readings || w.assignments || /\d/.test(w.label));
+}
+
+
+// ================= start =================
+render();
+startLocal();
+window.addEventListener("beforeunload", () => { for (const id of [...dirty]) flush(id); });
+})();
+</script>
+</body>
+</html>
