@@ -44,6 +44,11 @@
   .termhead{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px}
   .termhead h2{margin:0;font-size:22px;font-weight:600;letter-spacing:-.01em}
   .termhead select{width:auto;font-weight:600}
+  .cname[data-act]{cursor:text;border-radius:6px;padding:2px 6px;margin-left:-6px !important}
+  .cname[data-act]:hover{background:#fff;box-shadow:inset 0 0 0 1px var(--line)}
+  .cname .pen{font-size:14px;color:var(--muted);margin-left:8px;opacity:.5}
+  .cname:hover .pen{opacity:1;color:var(--accent)}
+  .cname-input{font-size:22px !important;font-weight:600;padding:2px 8px !important;width:auto !important;min-width:240px}
   .termhead .sp{flex:1}
   .tabs{display:flex;gap:4px;margin-bottom:12px}
   .tab{border:none;background:none;padding:6px 12px;border-radius:6px;cursor:pointer;color:var(--muted)}
@@ -173,6 +178,11 @@
   .startcard b{font-size:17px;font-weight:600}
   .startcard span{color:var(--muted);font-size:14px}
   .startcard .sc-icon{width:36px;height:36px;border-radius:8px;background:var(--accent-soft);color:var(--accent);display:flex;align-items:center;justify-content:center;font-size:18px;margin-bottom:4px}
+  .getapp-big{display:flex;align-items:center;gap:14px;width:100%;margin-top:16px;background:var(--accent);color:#fff;border:none;border-radius:10px;padding:18px 22px;cursor:pointer;text-align:left;transition:filter .15s}
+  .getapp-big:hover{filter:brightness(1.1)}
+  .getapp-big .sc-icon{width:40px;height:40px;border-radius:8px;background:rgba(255,255,255,.15);color:#fff;display:flex;align-items:center;justify-content:center;font-size:20px;flex:none}
+  .getapp-big b{display:block;font-size:17px;font-weight:600}
+  .getapp-big span span{display:block;font-size:14px;opacity:.85}
   .fine{font-size:13px;color:var(--muted);margin-top:22px;line-height:1.6}
   .fine a{color:var(--accent)}
   @media (max-width:760px){
@@ -351,9 +361,12 @@ function render(){
           <span>Choose your class dates and holidays, then fill in topics, readings and assignments.</span>
         </button>
       </div>
+      <button class="getapp-big" data-act="getapp">
+        <span class="sc-icon">⤓</span>
+        <span><b>Download the app</b><span>Keep Free Course Planner on your computer. Open it any time, even offline, and your work stays in a file you control.</span></span>
+      </button>
       <p class="fine">Works best when your Word schedule is a table with columns for the week or date, topic, readings and assignments.<br>
-      Everything stays on your computer; nothing is uploaded anywhere. Have a backup file? <a href="#" data-act="restore">Restore it</a>.<br>
-      Prefer to keep it on your computer? <a href="#" data-act="getapp">Download the app</a> and open it any time, even offline.</p>
+      Everything stays on your computer; nothing is uploaded anywhere. Have a backup file? <a href="#" data-act="restore">Restore it</a>.</p>
       <input type="file" id="welcomeFile" accept=".docx" hidden>
     </div>`;
     return;
@@ -362,7 +375,7 @@ function render(){
   const ts = termsOf(currentCourse);
   main.innerHTML = `
     <div class="termhead">
-      <h2>${esc(currentCourse)}</h2>
+      <h2 class="cname" ${canWrite ? `data-act="editcourse" title="Click to rename this course"` : ""}>${esc(currentCourse)}${canWrite ? `<span class="pen">✎</span>` : ""}</h2>
       <select id="termSel" aria-label="Term">${ts.map(x => `<option value="${esc(x.id)}" ${x.id===t.id?"selected":""}>${esc(x.term || "Untitled term")}</option>`).join("")}</select>
       <span class="sp"></span>
       <button class="btn small" data-act="copytable">Copy table</button>
@@ -373,7 +386,7 @@ function render(){
         </span></span>
       ${canWrite ? `<button class="btn small primary" data-act="copynext">Copy to next term</button>` : ""}
       ${canWrite ? `<button class="btn small" data-act="dates">Dates &amp; holidays</button>` : ""}
-      ${canWrite ? `<button class="btn small" data-act="editterm">Rename</button><button class="btn small danger" data-act="delterm">Delete term</button>` : ""}
+      ${canWrite ? `<button class="btn small" data-act="editterm">Rename term</button><button class="btn small danger" data-act="delterm">Delete term</button>` : ""}
     </div>
     <div class="tabs">
       <button class="tab ${view==="schedule"?"on":""}" data-act="view" data-v="schedule">Schedule</button>
@@ -656,6 +669,27 @@ document.addEventListener("click", async e => {
         t.weeks = t.weeks.filter(x => x.id !== w.id); openWeek = null; redrawOpen(t); scheduleSave(t.id);
       }); break;
     case "editterm": openRename(t); break;
+    case "editcourse": {
+      const h = b, oldC = currentCourse;
+      const inp = document.createElement("input");
+      inp.type = "text"; inp.className = "cname-input"; inp.value = oldC; inp.setAttribute("aria-label", "Course name");
+      inp.size = Math.max(12, oldC.length + 2);
+      h.replaceWith(inp); inp.focus(); inp.select();
+      let done = false;
+      const finish = save => {
+        if (done) return; done = true;
+        const v = inp.value.trim();
+        if (save && v && v !== oldC) {
+          termsOf(oldC).forEach(x => { x.course = v; flush(x.id); });
+          currentCourse = v; toast(`Renamed to ${v}`);
+        }
+        render();
+      };
+      inp.addEventListener("keydown", ev => { if (ev.key === "Enter") finish(true); if (ev.key === "Escape") finish(false); });
+      inp.addEventListener("input", () => { inp.size = Math.max(12, inp.value.length + 2); });
+      inp.addEventListener("blur", () => finish(true));
+      break;
+    }
     case "dates": openDates(t); break;
     case "copynext": openCopyNext(t); break;
     case "delterm":
@@ -1191,7 +1225,7 @@ function confirmBox(title, text, okLabel, onOk, calm){
     (m, close) => m.querySelector("#ok").addEventListener("click", () => { close(); onOk(); }));
 }
 function openRename(t){
-  modal(`<h3>Rename</h3>
+  modal(`<h3>Rename term</h3>
     <div class="fld"><label class="f">Course</label><input type="text" id="rc" value="${esc(t.course)}"></div>
     <div class="fld"><label class="f">Term</label><input type="text" id="rt" value="${esc(t.term)}"></div>
     <label style="font-size:14px;display:flex;gap:8px;align-items:center"><input type="checkbox" id="rall" checked> Rename the course on all of its terms</label>
