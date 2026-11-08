@@ -220,7 +220,9 @@
 <script>
 (() => {
 "use strict";
-const IS_LOCAL = location.protocol === "file:"; // opened from a file on the person's computer
+// A downloaded copy always carries a #cp-embedded block (see appFile), however it is opened;
+// also treat anything not served over the web as being on the person's computer.
+const IS_LOCAL = !!document.getElementById("cp-embedded") || !/^https?:$/.test(location.protocol);
 // The page's own source, captured before anything is drawn, so "Download the app" can save a copy.
 const APP_SOURCE = (() => {
   const c = document.documentElement.cloneNode(true);
