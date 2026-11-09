@@ -173,15 +173,17 @@
   .preview{font-size:13px;color:var(--accent);margin-top:8px}
   .modal.wide{max-width:640px}
   .toast button{background:none;border:none;color:#9fd3d6;font-weight:600;cursor:pointer;margin-left:10px}
-  .welcome{max-width:760px;margin:30px auto 0;text-align:center}
+  .welcome{max-width:980px;margin:30px auto 0;text-align:center}
   .welcome h2{font-size:24px;font-weight:600;letter-spacing:-.01em;margin:0 0 10px}
   .welcome > p.muted{font-size:15.5px;max-width:620px;margin:0 auto 26px}
-  .startgrid{display:grid;grid-template-columns:1fr 1fr;gap:16px;text-align:left}
+  .startgrid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;text-align:left}
   .startcard{display:flex;flex-direction:column;gap:6px;background:#fff;border:1px solid var(--line);border-radius:10px;padding:22px;cursor:pointer;text-align:left;transition:border-color .15s,box-shadow .15s}
   .startcard:hover{border-color:var(--accent);box-shadow:0 2px 10px rgba(47,93,98,.08)}
   .startcard b{font-size:17px;font-weight:600}
   .startcard span{color:var(--muted);font-size:14px}
   .startcard .sc-icon{width:36px;height:36px;border-radius:8px;background:var(--accent-soft);color:var(--accent);display:flex;align-items:center;justify-content:center;font-size:18px;margin-bottom:4px}
+  .samplebar{background:#fff8e6;border:1px solid #f0dfb0;border-radius:8px;padding:10px 14px;font-size:14px;margin-bottom:14px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+  .samplebar .btn{margin-left:auto}
   .getapp-big{display:flex;align-items:center;gap:14px;width:100%;margin-top:16px;background:var(--accent);color:#fff;border:none;border-radius:10px;padding:18px 22px;cursor:pointer;text-align:left;transition:filter .15s}
   .getapp-big:hover{filter:brightness(1.1)}
   .getapp-big .sc-icon{width:40px;height:40px;border-radius:8px;background:rgba(255,255,255,.15);color:#fff;display:flex;align-items:center;justify-content:center;font-size:20px;flex:none}
@@ -368,6 +370,11 @@ function render(){
           <b>Start from scratch</b>
           <span>Choose your class dates and holidays, then fill in topics, readings and assignments.</span>
         </button>
+        <button class="startcard" data-act="sample">
+          <span class="sc-icon">★</span>
+          <b>Try the sample</b>
+          <span>Explore a made-up Research Methods course with two years of notes, activities and links already filled in.</span>
+        </button>
       </div>
       ${IS_LOCAL ? "" : `<button class="getapp-big" data-act="getapp">
         <span class="sc-icon">⤓</span>
@@ -396,6 +403,7 @@ function render(){
       ${canWrite ? `<button class="btn small" data-act="dates">Dates &amp; holidays</button>` : ""}
       ${canWrite ? `<button class="btn small" data-act="editterm">Rename term</button><button class="btn small danger" data-act="delterm">Delete term</button>` : ""}
     </div>
+    ${t.sample ? `<div class="samplebar"><span>★ This is a made-up sample course. Click any cell to edit it, drag classes around, or open a week's <b>Details</b> to see its activity, links and notes, including last year's.</span><button class="btn small" data-act="removesample">Remove the sample</button></div>` : ""}
     <div class="tabs">
       <button class="tab ${view==="schedule"?"on":""}" data-act="view" data-v="schedule">Schedule</button>
       <button class="tab ${view==="changes"?"on":""}" data-act="view" data-v="changes">Changes to make</button>
@@ -586,6 +594,7 @@ function renderFoot(){
       ? `<button class="btn small primary" data-act="getapp" title="Saves a new copy of this file with all your latest work inside">Save an updated copy</button>`
       : `<button class="btn small primary" data-act="getapp" title="Saves Free Course Planner as a file you can open any time, even offline, with your courses inside">Download the app</button>`}
     <button class="btn small" data-act="backup">Download backup</button>
+    ${allTerms().some(x => x.sample) ? "" : `<button class="btn small" data-act="sample">Load the sample course</button>`}
     ${canWrite ? `<button class="btn small" data-act="restore">Restore from backup</button>` : ""}`;
 }
 
@@ -657,6 +666,8 @@ document.addEventListener("click", async e => {
     }
     case "newcourse": openNewTerm({ course: "", newCourse: true }); break;
     case "startupload": $("#welcomeFile").click(); break;
+    case "sample": e.preventDefault(); loadSample(); break;
+    case "removesample": confirmBox("Remove the sample course?", "This deletes both sample terms. Your own courses aren't affected.", "Remove sample", removeSample); break;
     case "startblank": openNewTerm({ course: "", newCourse: true, blank: true }); break;
     case "toggle": {
       openWeek = openWeek === w.id ? null : w.id; redrawOpen(t);
@@ -738,6 +749,78 @@ document.addEventListener("click", async e => {
     case "restore": e.preventDefault(); $("#restoreInput").click(); break;
   }
 });
+
+// ================= sample course (fictional) =================
+const SAMPLE_COURSE = "Sample – Research Methods in Education";
+const YT_LITREVIEW = { title: "How to Write a Literature Review (Scribbr, 3 min)", url: "https://www.youtube.com/watch?v=zIYC6zG265E", note: "Show in full, then pause for questions" };
+const YT_QUALQUANT = { title: "Qualitative vs Quantitative vs Mixed Methods (Grad Coach)", url: "https://www.youtube.com/watch?v=hECPeKv5tPM", note: "First 12 minutes" };
+const WWC = { title: "What Works Clearinghouse (IES)", url: "https://ies.ed.gov/ncee/wwc/", note: "Live demo: search an intervention and read its evidence rating" };
+const ERIC = { title: "ERIC – education research database", url: "https://eric.ed.gov/", note: "Students practice peer-reviewed + full-text filters" };
+const NCES = { title: "National Center for Education Statistics", url: "https://nces.ed.gov/", note: "Browse survey questionnaires as models for writing items" };
+const PRIVACY = { title: "Student Privacy Policy Office (FERPA)", url: "https://studentprivacy.ed.gov/", note: "Skim before the ethics case discussion" };
+// [topic, readings, assignments, activity, links, last year: how it went, last year: changes, this year: how it went]
+const SAMPLE_WEEKS = [
+  ["What Counts as Educational Research?\n(Room 210, Hartwell Hall)", "Course text, Ch. 1\nAlvarez & Moore (2019)", "", "Icebreaker: everyone brings one claim about schools they've heard (\"homework improves grades\"). Sort them into opinion, anecdote, and evidence.", [],
+   "Good energy. The claim sort took longer than planned (35 min) but set up the whole course.", "Give the claim sort a firm 25-minute limit.", "Claim sort ran 25 min this time. Much better pacing."],
+  ["Asking Good Research Questions", "Hart (2021)\nCase: The Greenfield Tutoring Pilot", "Reflection Journal 1", "Pairs rewrite three weak questions into researchable ones, then trade and critique.", [],
+   "Students struggled to narrow their questions. The case helped once we connected it to their own interests.", "Start with the case, then the rewriting activity.", "Started with the case as planned. Questions were noticeably sharper."],
+  ["Finding and Reading Research\nGuest speaker: Jordan Ellis, Library Services", "Course text, Ch. 2\nNguyen (2020)", "Reflection Journal 2", "Library workshop: each student finds two peer-reviewed studies on their topic.", [ERIC],
+   "The library session was the highlight of the first month.", "Book the computer lab so everyone can search at the same time.", "Lab booked. Everyone left with two usable articles."],
+  ["The Literature Review", "Course text, Ch. 4\nPatel & Brooks (2022)", "Reflection Journal 3\nTopic choice", "Build a synthesis matrix together from three short articles.", [YT_LITREVIEW],
+   "The video worked well as a warm-up. The matrix was confusing without a model.", "Hand out a completed example matrix first.", "Example matrix made a big difference."],
+  ["Theory and Conceptual Frameworks", "Okafor (2018)\nCourse text, Ch. 3", "Reflection Journal 4", "Draw-your-framework: students sketch how their key concepts connect, then gallery walk.", [],
+   "Abstract for some students. The gallery walk saved it.", "Add two concrete example frameworks from past student projects.", "Used the two examples. Still a hard week, but better."],
+  ["No Class – Field Trip\nRiverside Heritage Museum (meet at the main entrance, 10 a.m.)", "", "", "Observation practice: field notes on how the museum tells the story of local schools.", [],
+   "Great trip. Field notes were thin because students didn't know what to look for.", "Give an observation guide with 5 prompts before the trip.", ""],
+  ["Research Problems and Purpose Statements", "Course text, Ch. 5\nLindqvist (2023)", "Problem statement draft", "Peer review with a 4-point checklist.", [],
+   "The checklist kept peer review focused.", "Keep as is.", ""],
+  ["Foundations of Quantitative Research", "Course text, Ch. 6–7", "Article lead", "Read an evidence summary together and decide: would you adopt this program?", [WWC],
+   "The WWC demo got students excited about evidence ratings.", "Leave more time for the adopt-or-not debate.", ""],
+  ["Foundations of Qualitative Research", "Course text, Ch. 9\nMorales (2017)", "Article lead", "Mini-interviews: pairs interview each other for 5 minutes about their first teacher.", [YT_QUALQUANT],
+   "The mini-interviews made qualitative data feel real.", "Record the interviews (with permission) to reuse in Week 13.", ""],
+  ["Mixed Methods and Other Designs", "Course text, Ch. 10\nArts-based research packet", "Sourcing table", "Design-swap: groups redesign one study using a different approach.", [],
+   "Too much content for one session.", "Move the arts-based packet to optional reading.", ""],
+  ["Sampling, Participants, and Ethics\nGuest speaker: Dr. Sam Rivera, Office of Research", "Course text, Ch. 8\nEthics case packet", "Budget draft", "Ethics case discussion: what would you do?", [PRIVACY],
+   "Guest speaker was excellent. Students had many questions about consent with minors.", "Leave 20 minutes for Q&A with the speaker.", ""],
+  ["Collecting Data: Surveys and Interviews", "Course text, Ch. 11", "Instrument draft", "Students write five survey items, then test them on a partner.", [NCES],
+   "Item-writing was useful; partners caught leading questions.", "Show a bad survey first for contrast.", ""],
+  ["Coding and Analyzing Data", "Course text, Ch. 12\nCoding practice set", "Article lead", "Code the Week 9 interview excerpts in small groups and compare codes.", [],
+   "Coding the class's own interviews was very engaging.", "Keep, and add a short codebook template.", ""],
+  ["Simulation Day: The Island Schools Decision Game", "Game materials packet\nFischer (2016)", "Graphic / figure", "Teams act as a school board deciding where to spend a grant, using data cards.", [],
+   "Students loved it. Ran 15 minutes over.", "Cut the opening briefing to 5 minutes.", ""],
+  ["Final Proposal Presentations", "", "Research proposal", "Five-minute presentations with peer feedback forms.", [],
+   "Presentations were strong. Feedback forms were rushed.", "Collect feedback forms online instead.", ""],
+];
+function sampleTerms(){
+  const now = new Date();
+  const fy = now.getMonth() >= 7 ? now.getFullYear() : now.getFullYear() - 1; // the current (or most recent) fall
+  const firstTue = y => { let d = new Date(y, 8, 1); while (d.getDay() !== 2) d = addDays(d, 1); return d; };
+  const thanksgivingWeek = y => { let d = new Date(y, 10, 1); while (d.getDay() !== 4) d = addDays(d, 1); d = addDays(d, 21); return { name: "Thanksgiving Break", from: toISO(addDays(d, -3)), to: toISO(addDays(d, 1)) }; };
+  const today = toISO(now);
+  const make = (y, current) => {
+    const items = SAMPLE_WEEKS.map(([topic, readings, assignments, activity, links, prevHow, prevChange, curHow], i) => ({
+      ...blankWeek(i + 1), topic, readings, assignments, activity, links: clone(links),
+      reflection: current ? curHow : prevHow, changes: current ? "" : prevChange,
+    }));
+    const cal = { start: toISO(firstTue(y)), end: "", days: [2], holidays: [thanksgivingWeek(y)] };
+    const weeks = applyCalendar(items, cal);
+    if (current) weeks.forEach(w => { if (w.iso && w.iso >= today) w.reflection = ""; }); // no notes yet for classes still to come
+    return { id: "sample-" + y, course: SAMPLE_COURSE, term: `Fall ${y}`, sample: true,
+             createdAt: Date.now() - (current ? 0 : 365 * 864e5), updatedAt: Date.now(), calendar: cal, weeks };
+  };
+  return [make(fy - 1, false), make(fy, true)];
+}
+function loadSample(){
+  const existing = allTerms().filter(t => t.sample);
+  if (!existing.length) for (const t of sampleTerms()) { terms.set(t.id, t); flush(t.id); }
+  const cur = allTerms().filter(t => t.sample)[0];
+  currentId = cur.id; currentCourse = cur.course; lsSet("cp.current", cur.id); openWeek = null; view = "schedule";
+  render();
+}
+async function removeSample(){
+  for (const t of allTerms().filter(x => x.sample)) await removeTerm(t.id);
+  currentId = null; pickCurrent(); render(); toast("Sample removed");
+}
 
 // ================= moving classes & assignments =================
 const CLASS_FIELDS = ["topic", "readings", "activity", "links", "reflection", "changes"];

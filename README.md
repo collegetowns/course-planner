@@ -2,7 +2,7 @@
 
 A simple planner for teachers to build, teach and improve a course week by week, year to year.
 
-- Upload a Word (.docx) syllabus, or start from scratch
+- Upload a Word (.docx) syllabus, start from scratch, or try a made-up sample course
 - Set class dates with a calendar: meeting days, holidays and breaks (Week 1 / Session A, B…)
 - Click any cell to edit the topic, readings and assignments; drag to move classes and assignments
 - For each week, keep the activity, links (videos, articles) and notes on how class went
