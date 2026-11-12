@@ -61,9 +61,10 @@
   /* schedule table */
   table.sched{width:100%;border-collapse:separate;border-spacing:0;background:var(--card);border:1px solid var(--line);border-radius:8px;table-layout:fixed;overflow:hidden}
   .sched th{background:var(--head);text-align:left;font-size:13px;font-weight:600;color:#3d4146;padding:10px 12px;border-bottom:1px solid var(--line)}
-  .sched td{padding:10px 12px;vertical-align:top;border-bottom:1px solid var(--line);font-size:14px}
+  .sched td{padding:10px 12px;vertical-align:top;border-bottom:1px dashed #e2e2dc;font-size:14px}
+  .sched tr.alt td{background:#fafaf7}
   .sched td[data-edit]{cursor:text}
-  .sched td[data-edit]:hover{background:#fafaf7;box-shadow:inset 0 0 0 1px #e3e3de}
+  .sched td[data-edit]:hover{background:#f3f6f6;box-shadow:inset 0 0 0 1px #dfe7e7}
   .sched td.editing,.sched td.editing:hover{background:#fff !important;box-shadow:inset 0 0 0 2px var(--accent)}
   .sched .ce{width:100%;border:1px solid var(--line);border-radius:5px;padding:5px 7px;font-size:14px;min-height:0;resize:vertical;background:#fff}
   .sched textarea.ce{min-height:70px}
@@ -150,8 +151,8 @@
   /* drag to move */
   .sched td[draggable=true]{position:relative;padding-left:18px}
   .sched td[draggable=true]:active{cursor:grabbing}
-  .grip{cursor:grab;position:absolute;left:5px;top:11px;color:#b9bcbf;font-size:12px;letter-spacing:-2px;opacity:0;transition:opacity .12s;user-select:none}
-  .sched tr.row:hover .grip{opacity:1}
+  .grip{cursor:grab;position:absolute;left:5px;top:11px;color:#b9bcbf;font-size:12px;letter-spacing:-2px;opacity:.45;transition:opacity .12s,color .12s;user-select:none}
+  .sched tr.row:hover .grip{opacity:1;color:var(--accent)}
   .sched tr.row td.drag-src{opacity:.4}
   .sched tr.row td.drop-target{background:#dcebeb !important;box-shadow:inset 0 2px 0 var(--accent)}
   .sched tr.row.hl-class td.g-class, .sched tr.row.hl-asg td.g-asg{background:#f1f6f6}
@@ -442,9 +443,10 @@ function cellsHtml(w){
     <td class="chev"><button class="detbtn ${open?"on":""}" data-act="toggle" title="Activity, links and notes">${open ? "▲" : "▼"}<span>Details</span></button></td>`;
 }
 function rowHtml(t, w){
+  const alt = t.weeks.indexOf(w) % 2 ? " alt" : "";
   if (w.holiday) return `<tr class="holiday" data-row="${esc(w.id)}">${cellsHtml(w)}</tr>`;
   const open = openWeek === w.id;
-  return `<tr class="row ${open?"open":""}" data-row="${esc(w.id)}">${cellsHtml(w)}</tr>` +
+  return `<tr class="row${alt} ${open?"open":""}" data-row="${esc(w.id)}">${cellsHtml(w)}</tr>` +
     (open ? `<tr data-week="${esc(w.id)}"><td class="detail" colspan="5"><div class="detail-inner">${detailHtml(t, w)}</div></td></tr>` : "");
 }
 // ---------- inline cell editing ----------
