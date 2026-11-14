@@ -586,7 +586,8 @@ function renderChanges(t){
 
 function appFile(){
   const data = JSON.stringify({ savedAt: new Date().toISOString(), terms: allTerms() }).replace(/</g, "\\u003c");
-  return APP_SOURCE.replace("</head>", `<script type="application/json" id="cp-embedded">${data}<\/script>\n</head>`);
+  // A function is used so "$" in course text is kept exactly as typed.
+  return APP_SOURCE.replace("</head>", () => `<script type="application/json" id="cp-embedded">${data}<\/script>\n</head>`);
 }
 function renderFoot(){
   const f = $("#foot");
