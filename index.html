@@ -185,6 +185,29 @@
   .startcard .sc-icon{width:36px;height:36px;border-radius:8px;background:var(--accent-soft);color:var(--accent);display:flex;align-items:center;justify-content:center;font-size:18px;margin-bottom:4px}
   .samplebar{background:#fff8e6;border:1px solid #f0dfb0;border-radius:8px;padding:10px 14px;font-size:14px;margin-bottom:14px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
   .samplebar .btn{margin-left:auto}
+  .homebtn{font:inherit;color:inherit;background:none;border:none;padding:2px 6px;margin-left:-6px;border-radius:6px;cursor:pointer}
+  .homebtn:hover{background:#fff;box-shadow:inset 0 0 0 1px var(--line)}
+  .course-tab.home{color:var(--muted)}
+  .yours{text-align:left;margin-bottom:6px}
+  .yours h3,.ways h3{font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:600;margin:0 0 10px}
+  .yourgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px}
+  .yourcard{display:flex;flex-direction:column;gap:3px;text-align:left;background:#fff;border:1px solid var(--line);border-left:4px solid var(--accent);border-radius:8px;padding:14px 16px;cursor:pointer}
+  .yourcard:hover{border-color:var(--accent);box-shadow:0 2px 10px rgba(47,93,98,.08)}
+  .yourcard b{font-size:16px;font-weight:600}
+  .yourcard span{font-size:13px;color:var(--muted)}
+  .yourcard .go{color:var(--accent);font-weight:600;margin-top:4px}
+  .ways{margin-top:22px;text-align:left}
+  .ways-row{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  .way{background:#fff;border:1px solid var(--line);border-radius:10px;padding:18px 20px}
+  .way.rec{border:2px solid var(--accent)}
+  .way .way-title{font-size:16px;font-weight:600;display:block;margin-bottom:4px}
+  .way p{font-size:14px;color:var(--muted);margin:0 0 12px}
+  .way-tag{font-size:11px;text-transform:uppercase;letter-spacing:.06em;font-weight:700;color:var(--accent);margin-bottom:6px}
+  .way:not(.rec) .way-tag{color:var(--muted)}
+  .vtag{font-size:11px;opacity:.75;margin-left:4px}
+  .where-note{display:flex;gap:10px;align-items:flex-start;text-align:left;background:#eef7f1;border:1px solid #cfe6d7;border-radius:8px;padding:12px 14px;margin-top:20px;font-size:14px}
+  .where-note .dot{width:9px;height:9px;border-radius:50%;background:#2e8b57;margin-top:6px;flex:none}
+  .where-note a{color:var(--accent)}
   .getapp-big{display:flex;align-items:center;gap:14px;width:100%;margin-top:16px;background:var(--accent);color:#fff;border:none;border-radius:10px;padding:18px 22px;cursor:pointer;text-align:left;transition:filter .15s}
   .getapp-big:hover{filter:brightness(1.1)}
   .getapp-big .sc-icon{width:40px;height:40px;border-radius:8px;background:rgba(255,255,255,.15);color:#fff;display:flex;align-items:center;justify-content:center;font-size:20px;flex:none}
@@ -193,7 +216,7 @@
   .fine{font-size:13px;color:var(--muted);margin-top:22px;line-height:1.6}
   .fine a{color:var(--accent)}
   @media (max-width:760px){
-    .startgrid{grid-template-columns:1fr}
+    .startgrid,.ways-row{grid-template-columns:1fr}
     .sched col.c-read,.sched col.c-asg{width:auto}
     .grid2,.grid3,.linkrow{grid-template-columns:1fr}
   }
@@ -206,11 +229,12 @@
 <div class="wrap">
   <header class="top">
     <div class="brand">
-      <h1>Free Course Planner</h1>
+      <h1><button class="homebtn" data-act="home" title="Back to the start screen">Free Course Planner</button></h1>
       <a class="powered" href="https://www.collegetowns.org/" target="_blank" rel="noopener">Powered by <b>College Towns</b></a>
       <span class="where" id="whereBadge"></span>
     </div>
     <span class="status" id="status"></span>
+    <button class="btn" id="hdrApp" data-act="getapp" title="Keep Free Course Planner on your computer">⤓ Download the app</button>
     <button class="btn primary" id="newTermBtn">+ New term</button>
   </header>
   <div id="banner"></div>
@@ -242,6 +266,9 @@ let canWrite = true;
 const terms = new Map();
 let currentCourse = null, currentId = null;
 let view = "schedule";
+let home = false;              // showing the start screen even though courses exist
+const APP_VERSION = "1.0";
+const SITE_URL = "https://courseplanner.collegetowns.org/";
 let openWeek = null;
 const dirty = new Set(), saveTimers = new Map(), saving = new Map();
 
@@ -255,11 +282,11 @@ const firstLine = s => lines(s)[0] || "";
 function lsGet(k){ try { return localStorage.getItem(k); } catch(e){ return null; } }
 function lsSet(k,v){ try { localStorage.setItem(k,v); return true; } catch(e){ return false; } }
 function setStatus(t){ $("#status").textContent = t; }
-function toast(msg, actionLabel, onAction){
+function toast(msg, actionLabel, onAction, ms){
   document.querySelectorAll(".toast").forEach(x => x.remove());
   const d = document.createElement("div"); d.className = "toast"; d.textContent = msg;
   if (actionLabel) { const b = document.createElement("button"); b.textContent = actionLabel; b.onclick = () => { d.remove(); onAction(); }; d.appendChild(b); }
-  document.body.appendChild(d); setTimeout(() => d.remove(), actionLabel ? 7000 : 2400);
+  document.body.appendChild(d); setTimeout(() => d.remove(), ms || (actionLabel ? 7000 : 2400));
 }
 function showBanner(msg){ $("#banner").innerHTML = msg ? `<div class="banner">${esc(msg)}</div>` : ""; }
 
@@ -348,21 +375,28 @@ function renderCourses(){
   const nav = $("#courses");
   const list = courseList();
   nav.style.display = list.length ? "" : "none";
-  nav.innerHTML = list.map(c => `<button class="course-tab ${c===currentCourse?"on":""}" data-act="course" data-c="${esc(c)}">${esc(c)}</button>`).join("") +
+  nav.innerHTML = `<button class="course-tab home ${home?"on":""}" data-act="home" title="Back to the start screen">⌂ Home</button>` +
+    list.map(c => `<button class="course-tab ${!home && c===currentCourse?"on":""}" data-act="course" data-c="${esc(c)}">${esc(c)}</button>`).join("") +
     (canWrite ? `<button class="course-tab add" data-act="newcourse">+ Add course</button>` : "");
 }
 
 function render(){
   renderCourses();
   renderFoot();
-  $("#newTermBtn").style.display = canWrite && terms.size ? "" : "none";
+  $("#newTermBtn").style.display = canWrite && terms.size && !home ? "" : "none";
+  $("#hdrApp").style.display = IS_LOCAL ? "none" : "";
   const main = $("#main");
   const t = terms.get(currentId);
   if (mode === "loading") { main.innerHTML = `<div class="empty">Loading…</div>`; return; }
-  if (!t) {
+  if (!t || home) {
+    const courses = courseList();
     main.innerHTML = `<div class="welcome">
       <h2>Plan your courses week by week, and improve them year to year.</h2>
       <p class="muted">Keep each week's topic, readings and assignments in one table. Add the activity you ran, the videos and links you used, and notes on how class went. Next year, copy the term forward and see last year's notes right where you need them.</p>
+      ${courses.length ? `<div class="yours"><h3>Your courses</h3><div class="yourgrid">${courses.map(c => {
+        const ts = termsOf(c);
+        return `<button class="yourcard" data-act="course" data-c="${esc(c)}"><b>${esc(c)}</b><span>${ts.map(x => esc(x.term)).join(" · ")}</span><span class="go">Open →</span></button>`;
+      }).join("")}</div><h3 style="margin-top:26px">Start something new</h3></div>` : ""}
       <div class="startgrid">
         <button class="startcard" data-act="startupload">
           <span class="sc-icon">⇪</span>
@@ -380,12 +414,14 @@ function render(){
           <span>Explore a made-up Research Methods course with two years of notes, activities and links already filled in.</span>
         </button>
       </div>
-      ${IS_LOCAL ? "" : `<button class="getapp-big" data-act="getapp">
-        <span class="sc-icon">⤓</span>
-        <span><b>Download the app</b><span>Keep Free Course Planner on your computer. Open it any time, even offline, and your work stays in a file you control.</span></span>
-      </button>`}
+      ${IS_LOCAL
+        ? `<div class="where-note"><span class="dot"></span><div><b>You're using the copy on your computer</b> (version ${APP_VERSION}). It works without the internet. <a href="${SITE_URL}" target="_blank" rel="noopener">Check for a newer version</a></div></div>`
+        : `<div class="ways"><h3>Two ways to use Free Course Planner</h3><div class="ways-row">
+            <div class="way rec"><div class="way-tag">Recommended</div><span class="way-title">⤓ Download the app</span><p>Keep Free Course Planner as a file on your computer and open it any time, even without the internet. Your courses are saved inside the file you download.</p><button class="btn primary" data-act="getapp">Download the app <span class="vtag">v${APP_VERSION}</span></button></div>
+            <div class="way"><div class="way-tag">Good for trying it out</div><span class="way-title">🌐 Work online</span><p>Use the options above, right here. Your work stays on your computer, but it's kept <b>only in this browser</b>, so clearing your browsing history can erase it. Download a backup now and then.</p></div>
+          </div></div>`}
       <p class="fine">Works best when your Word schedule is a table with columns for the week or date, topic, readings and assignments.<br>
-      ${IS_LOCAL ? "You're using the copy saved on your computer." : ""} Everything stays on your computer; nothing is uploaded anywhere. Have a backup file? <a href="#" data-act="restore">Restore it</a>.</p>
+      Everything stays on your computer; nothing is uploaded anywhere. Have a backup file? <a href="#" data-act="restore">Restore it</a>.</p>
       <input type="file" id="welcomeFile" accept=".docx" hidden>
     </div>`;
     return;
@@ -598,7 +634,7 @@ function renderFoot(){
   f.innerHTML = `<span>${where}</span>
     ${IS_LOCAL
       ? `<button class="btn small primary" data-act="getapp" title="Saves a new copy of this file with all your latest work inside">Save an updated copy</button>`
-      : `<button class="btn small primary" data-act="getapp" title="Saves Free Course Planner as a file you can open any time, even offline, with your courses inside">Download the app</button>`}
+      : home ? "" : `<button class="btn small primary" data-act="getapp" title="Saves Free Course Planner as a file you can open any time, even offline, with your courses inside">Download the app</button>`}
     <button class="btn small" data-act="backup">Download backup</button>
     ${allTerms().some(x => x.sample) ? "" : `<button class="btn small" data-act="sample">Load the sample course</button>`}
     ${canWrite ? `<button class="btn small" data-act="restore">Restore from backup</button>` : ""}`;
@@ -667,12 +703,13 @@ document.addEventListener("click", async e => {
   const w = t && wid ? t.weeks.find(x => x.id === wid) : null;
   switch (act) {
     case "course": {
-      currentCourse = b.dataset.c; const first = termsOf(currentCourse)[0];
+      home = false; currentCourse = b.dataset.c; const first = termsOf(currentCourse)[0];
       currentId = first ? first.id : null; lsSet("cp.current", currentId); openWeek = null; view = "schedule"; render(); break;
     }
     case "newcourse": openNewTerm({ course: "", newCourse: true }); break;
     case "startupload": $("#welcomeFile").click(); break;
     case "sample": e.preventDefault(); loadSample(); break;
+    case "home": home = true; openWeek = null; render(); window.scrollTo(0, 0); break;
     case "removesample": confirmBox("Remove the sample course?", "This deletes both sample terms. Your own courses aren't affected.", "Remove sample", removeSample); break;
     case "startblank": openNewTerm({ course: "", newCourse: true, blank: true }); break;
     case "toggle": {
@@ -749,8 +786,11 @@ document.addEventListener("click", async e => {
     }
     case "getapp": {
       e.preventDefault();
-      const ok = await saveFile(terms.size ? `Free Course Planner (saved ${new Date().toISOString().slice(0,10)}).html` : "Free Course Planner.html", appFile(), "text/html");
-      if (ok) toast(IS_LOCAL ? "Saved an updated copy. You can delete the older file." : terms.size ? "Downloaded, with your courses inside" : "Downloaded"); break;
+      const name = IS_LOCAL ? `Free Course Planner v${APP_VERSION} (saved ${new Date().toISOString().slice(0,10)}).html` : `Free Course Planner v${APP_VERSION}.html`;
+      const ok = await saveFile(name, appFile(), "text/html");
+      if (ok) toast(IS_LOCAL ? "Saved an updated copy. You can delete the older file."
+        : `Downloaded Free Course Planner v${APP_VERSION}${terms.size ? ", with your courses inside" : ""}. Move it to a folder you'll remember, then double-click it to open. It works without the internet.`, null, null, 9000);
+      break;
     }
     case "restore": e.preventDefault(); $("#restoreInput").click(); break;
   }
@@ -820,7 +860,7 @@ function loadSample(){
   const existing = allTerms().filter(t => t.sample);
   if (!existing.length) for (const t of sampleTerms()) { terms.set(t.id, t); flush(t.id); }
   const cur = allTerms().filter(t => t.sample)[0];
-  currentId = cur.id; currentCourse = cur.course; lsSet("cp.current", cur.id); openWeek = null; view = "schedule";
+  home = false; currentId = cur.id; currentCourse = cur.course; lsSet("cp.current", cur.id); openWeek = null; view = "schedule";
   render();
 }
 async function removeSample(){
@@ -1156,7 +1196,7 @@ function openCopyNext(t){
       }
       const id = uid();
       terms.set(id, { id, course: t.course, term: name, createdAt: Date.now(), updatedAt: Date.now(), weeks, ...(calendar ? { calendar } : {}) });
-      currentId = id; lsSet("cp.current", id); openWeek = null; view = "schedule";
+      home = false; currentId = id; lsSet("cp.current", id); openWeek = null; view = "schedule";
       close(); render(); flush(id);
       toast(`Created ${name}`);
     });
@@ -1524,7 +1564,7 @@ function openNewTerm({ course = "", newCourse = false, file = null, blank = fals
         (calendar ? termFromDate(parseISO(calendar.start)) : found ? termFromDate(found.first) : termFromDate(new Date()));
       const id = uid();
       terms.set(id, { id, course: c, term, createdAt: Date.now(), updatedAt: Date.now(), weeks, ...(calendar ? { calendar } : {}) });
-      currentId = id; currentCourse = c; lsSet("cp.current", id); openWeek = null; view = "schedule";
+      home = false; currentId = id; currentCourse = c; lsSet("cp.current", id); openWeek = null; view = "schedule";
       close(); render(); flush(id);
     });
   });
@@ -1635,8 +1675,8 @@ function tableToWeeks(grid){
 
 // ================= start =================
 { const wb = $("#whereBadge");
-  if (IS_LOCAL) { wb.className = "where local"; wb.textContent = "On your computer"; wb.title = "You're using the copy of Free Course Planner saved on this computer."; }
-  else { wb.className = "where web"; wb.textContent = "Web version"; wb.title = "You're using Free Course Planner on the web. Download the app to keep a copy on your computer."; } }
+  if (IS_LOCAL) { wb.className = "where local"; wb.textContent = "On your computer"; wb.title = `You're using the copy of Free Course Planner saved on this computer (version ${APP_VERSION}).`; }
+  else { wb.className = "where web"; wb.textContent = "Web version"; wb.title = `You're using Free Course Planner on the web (version ${APP_VERSION}). Download the app to keep a copy on your computer.`; } }
 render();
 startLocal();
 window.addEventListener("beforeunload", () => { for (const id of [...dirty]) flush(id); });

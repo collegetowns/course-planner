@@ -13,6 +13,10 @@ A simple planner for teachers to build, teach and improve a course week by week,
 
 Live site: https://courseplanner.collegetowns.org
 
+## Web version or download
+
+Use it online, or click **Download the app** to keep it on your computer. The downloaded file (for example `Free Course Planner v1.0.html`) opens in your browser by double-clicking, works without an internet connection, and carries your courses inside it.
+
 ## Privacy
 
 Everything runs in the browser. Nothing is uploaded or sent anywhere. Work is saved in the teacher's own browser (localStorage), and teachers can download a backup file, or download the app with their courses inside it, to keep a copy or move it to another computer.
